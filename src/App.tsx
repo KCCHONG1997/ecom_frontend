@@ -2,6 +2,11 @@ import React, { FC } from 'react';
 import { Button } from 'antd';
 import logo from './logo.svg';
 import './App.css';
+import { Layout } from 'antd';
+import Menu from 'antd/es/menu/menu';
+
+const { Header, Footer, Sider, Content } = Layout;
+
 
 // function App() {
 //   return (
@@ -24,10 +29,30 @@ import './App.css';
 //   );
 // }
 
+
+
 const App: FC =() => (
-  <div>
-    <Button type="primary">Button</Button>
-  </div>
+<>
+    <Layout>
+      <Header>
+      <div className="logo" />
+      <Menu
+        theme="dark"
+        mode="horizontal"
+        defaultSelectedKeys={['2']}
+        items={new Array(15).fill(null).map((_, index) => {
+          const key = index + 1;
+          return {
+            key,
+            label: `nav ${key}`,
+          };
+        })}
+      />
+      </Header>
+      <Content>Content</Content>
+      <Footer>Footer</Footer>
+    </Layout>
+</>
 );
 
 export default App;
