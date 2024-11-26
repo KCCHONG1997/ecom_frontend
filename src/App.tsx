@@ -1,58 +1,74 @@
 import React, { FC } from 'react';
-import { Button } from 'antd';
-import logo from './logo.svg';
-import './App.css';
 import { Layout } from 'antd';
-import Menu from 'antd/es/menu/menu';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import NavBar, { NavConfig } from './component/navBar/navBar';
+import LoginOutlined from '@ant-design/icons/lib/icons/LoginOutlined';
+import HomePage from './view/HomePage';
+import ShoppingPage from './view/ShoppingPage';
+import NotFoundPage from './global/NotFoundPage';
 
-const { Header, Footer, Sider, Content } = Layout;
+const { Header, Footer, Content } = Layout;
 
+const navConfig: NavConfig = {
+  navBarTheme: 'dark',
+  navLayout: 'horizontal',
+  leftNavItems: [
+    {
+      key: '',
+      label: 'Home',
+    },
+    {
+      key: 'shopping',
+      label: 'Shopping',
+      style: { backgroundColor: 'red' },
+      children: [
+        {
+          key: 'electronics',
+          label: 'Electronics',
+          style: { backgroundColor: 'red', margin: 0, width: '100%' },
+        },
+      ],
+    },
+    {
+      key: 'contactus',
+      label: 'Contact Us',
+      children: [
+        { key: 'business', label: 'Business' },
+        { key: 'feedback', label: 'Feedback' },
+      ],
+    },
+  ],
+  rightNavItems: [
+    {
+      key: 'login',
+      icon: <LoginOutlined />,
+    },
+  ],
+};
 
-// function App() {
-//   return (
-//     <div className="App">
-//       <header className="App-header">
-//         <img src={logo} className="App-logo" alt="logo" />
-//         <p>
-//           Edit <code>src/App.tsx</code> and save to reload.
-//         </p>
-//         <a
-//           className="App-link"
-//           href="https://reactjs.org"
-//           target="_blank"
-//           rel="noopener noreferrer"
-//         >
-//           Learn React
-//         </a>
-//       </header>
-//     </div>
-//   );
-// }
-
-
-
-const App: FC =() => (
-<>
-    <Layout>
+const App: FC = () => (
+  <BrowserRouter>
+    <Layout style={{ minHeight: '100vh' }}> {/* Ensure full browser height */}
       <Header>
-      <div className="logo" />
-      <Menu
-        theme="dark"
-        mode="horizontal"
-        defaultSelectedKeys={['2']}
-        items={new Array(15).fill(null).map((_, index) => {
-          const key = index + 1;
-          return {
-            key,
-            label: `nav ${key}`,
-          };
-        })}
-      />
+        <div className="logo" />
+        <NavBar
+          navBarTheme={navConfig.navBarTheme}
+          navLayout={navConfig.navLayout}
+          leftNavItems={navConfig.leftNavItems}
+          rightNavItems={navConfig.rightNavItems}
+        />
       </Header>
-      <Content>Content</Content>
-      <Footer>Footer</Footer>
+      <Content style={{ flex: 1, padding: '16px' }}> {/* Flex to fill remaining space */}
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/shopping" element={<ShoppingPage />} />
+          <Route path="/contactus" element={<ShoppingPage />} />
+          <Route path="*" element={<NotFoundPage />} />
+        </Routes>
+      </Content>
+      <Footer style={{ textAlign: 'center' }}>NTU Project</Footer>
     </Layout>
-</>
+  </BrowserRouter>
 );
 
 export default App;

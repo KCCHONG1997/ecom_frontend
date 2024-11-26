@@ -6,7 +6,6 @@ declaring it in its dependencies. This is currently working because
 "@babel/plugin-proposal-private-property-in-object" is already in your
 node_modules folder for unrelated reasons, but it may break at any time."
 
-
 DO NOT INSTALL BELOW, IT IS DEPRECATED!
 npm install @babel/plugin-proposal-private-property-in-object --save-dev
 
@@ -14,3 +13,5 @@ npm warn deprecated @babel/plugin-proposal-private-property-in-object@7.21.11: T
 
 INSTALL THIS INSTEAD:
 npm install @babel/plugin-transform-private-property-in-object --save-dev
+
+The deprecated @babel/plugin-proposal-private-property-in-object plugin is being used by babel-preset-react-app, which is part of the react-scripts package that creates and configures your React project.
