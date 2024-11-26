@@ -13,7 +13,8 @@ const NotFoundPage: React.FC = () =>{
         <Result
           status="404"
           title="404"
-          subTitle="Sorry, the page you visited does not exist. Fuck Off."
+          // subTitle="Sorry, the page you visited does not exist."
+          subTitle = "Fuck Off."
           extra={<Button 
             type="primary"
             onClick={handleClick}

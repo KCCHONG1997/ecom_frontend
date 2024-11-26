@@ -1,6 +1,5 @@
 import React from 'react';
 import { Carousel } from 'antd';
-import { Image } from 'antd';
 
 const HomePage: React.FC = () => {
   const images = [
@@ -15,7 +14,7 @@ const HomePage: React.FC = () => {
       <Carousel autoplay>
         {images.map((src, index) => (
           <div key={index}>
-            <Image
+            <img
               src={src}
               alt={`Slide ${index + 1}`}
               style={{ width: '100%', height: '550px', objectFit: 'contain' }}
