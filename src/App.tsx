@@ -2,10 +2,10 @@ import React, { FC } from 'react';
 import { Layout } from 'antd';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import NavBar, { NavConfig } from './component/navBar/navBar';
-import LoginOutlined from '@ant-design/icons/lib/icons/LoginOutlined';
 import HomePage from './view/HomePage';
 import ShoppingPage from './view/ShoppingPage';
 import NotFoundPage from './global/NotFoundPage';
+import LoginPage from './view/LoginPage';
 
 const { Header, Footer, Content } = Layout;
 
@@ -41,8 +41,12 @@ const navConfig: NavConfig = {
   rightNavItems: [
     {
       key: 'login',
-      icon: <LoginOutlined />,
+      label: 'Login'
     },
+    {
+      key:'signup',
+      label:'Sign Up'
+    }
   ],
 };
 
@@ -58,15 +62,16 @@ const App: FC = () => (
           rightNavItems={navConfig.rightNavItems}
         />
       </Header>
-      <Content style={{ flex: 1, padding: '16px' }}> {/* Flex to fill remaining space */}
+      <Content style={{ flex: 1, padding: '16px, 0px', overflow: 'hidden', }}> {/* Flex to fill remaining space */}
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/shopping" element={<ShoppingPage />} />
           <Route path="/contactus" element={<ShoppingPage />} />
+          <Route path="/login" element={<LoginPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </Content>
-      <Footer style={{ textAlign: 'center' }}>NTU Project</Footer>
+      <Footer style={{ textAlign: 'center', backgroundColor: '#08072e', color: 'azure' }}>NTU Project</Footer>
     </Layout>
   </BrowserRouter>
 );

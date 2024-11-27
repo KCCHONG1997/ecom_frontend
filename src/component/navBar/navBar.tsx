@@ -3,12 +3,12 @@ import React, { FC } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Row, Col } from 'antd';
 
-export interface NavConfig{
-    navBarTheme: 'light' | 'dark';
-    navLayout: 'horizontal' | 'vertical' | 'inline';
-    // leftNavItems?: MenuProps['items'];
-    leftNavItems?: MenuProps['items'];
-    rightNavItems?: MenuProps['items'];
+export interface NavConfig {
+  navBarTheme: 'light' | 'dark';
+  navLayout: 'horizontal' | 'vertical' | 'inline';
+  // leftNavItems?: MenuProps['items'];
+  leftNavItems?: MenuProps['items'];
+  rightNavItems?: MenuProps['items'];
 }
 
 const NavBar: React.FC<NavConfig> = (config) => {
@@ -21,29 +21,29 @@ const NavBar: React.FC<NavConfig> = (config) => {
   };
 
   return (
-  <Row justify="space-between" align="middle" style={{ width: '100%' }}>
-    {/* Left Navigation */}
-    <Col flex="1">
-      <Menu
-        theme={config.navBarTheme}
-        mode={config.navLayout}
-        items={config.leftNavItems}
-        defaultSelectedKeys={['1']}
-        onClick={handleMenuClick}
-      />
-    </Col>
+    <Row justify="space-between" align="middle" style={{ width: '100%' }}>
+      {/* Left Navigation */}
+      <Col span={8}>
+        <Menu
+          theme={config.navBarTheme}
+          mode={config.navLayout}
+          items={config.leftNavItems}
+          defaultSelectedKeys={['1']}
+          onClick={handleMenuClick}
+        />
+      </Col>
 
-    {/* Right Navigation */}
-    <Col>
-      <Menu
-        theme={config.navBarTheme}
-        mode={config.navLayout}
-        items={config.rightNavItems}
-        onClick={handleMenuClick}
-      />
-    </Col>
-  </Row>
+      {/* Right Navigation */}
+      <Col span={4} offset={7}>
+        <Menu
+          theme={config.navBarTheme}
+          mode={config.navLayout}
+          items={config.rightNavItems}
+          onClick={handleMenuClick}
+        />
+      </Col>
+    </Row>
   );
 };
 
-  export default NavBar;
+export default NavBar;
