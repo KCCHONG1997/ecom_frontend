@@ -1,12 +1,16 @@
-import React from 'react';
-import { Carousel } from 'antd';
-
-import { Button, Typography, Row, Col, Card } from 'antd';
+import React, { useEffect } from 'react';
+import { Carousel, Typography, Row, Col, Button, Card } from 'antd';
+import { useDispatch, useSelector } from 'react-redux';
+import { setVisibleCards } from '../redux/slices/carouselSlice';
+import type { RootState } from '../redux/store';
 import ItemCard from '../component/card/ItemCard';
 
 const { Title, Paragraph } = Typography;
 
 const HomePage: React.FC = () => {
+
+  const dispatch = useDispatch();
+  const visibleCards = useSelector((state: RootState) => state.carousel.visibleCards);
 
   // DUMMY DATA for product
   const items = [
@@ -54,9 +58,26 @@ const HomePage: React.FC = () => {
     },
   ];
 
+  useEffect(() => {
+    const handleResize = () => {
+      const width = window.innerWidth;
+
+      if (width < 1000) dispatch(setVisibleCards(1));
+      else if (width < 1300) dispatch(setVisibleCards(2));
+      else dispatch(setVisibleCards(3));
+    };
+
+    handleResize(); // Initial check
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [dispatch]);
+
   const groupedItems = [];
-  for (let i = 0; i < items.length; i += 3) {
-    groupedItems.push(items.slice(i, i + 3));
+  for (let i = 0; i < items.length; i += visibleCards) {
+    groupedItems.push(items.slice(i, i + visibleCards));
   }
 
   return (
@@ -65,7 +86,7 @@ const HomePage: React.FC = () => {
       <div
         style={{
           width: '100%',
-          height: '400px',
+          height: '500px',
           backgroundColor: '#222222', // Primary color
           display: 'flex',
           justifyContent: 'center',
@@ -112,22 +133,22 @@ const HomePage: React.FC = () => {
       {/* Checkout Our Top Seller */}
 
       <div style={{ backgroundColor: '#777777', color: '#fff', padding: '50px 20px' }}>
-        <Row gutter={[16, 16]} align="middle">
+        <Row gutter={[15, 15]} align="middle">
           {/* Left Column */}
-          <Col xs={24} md={8}>
-            <Title style={{ color: '#fff', fontSize: '2rem', padding: '10px 20px' }}>
+          <Col xs={12} md={4}>
+            <Title style={{ color: '#fff', fontSize: '2rem', padding: '10px 25px' }}>
               Check Out Our Top Seller
             </Title>
           </Col>
 
           {/* Right Column */}
-          <Col xs={24} md={16} style={{maxWidth:'60vw'}}>
+          <Col xs={24} md={16} style={{ maxWidth: '80vw' }}>
             <Carousel effect='fade' dotPosition='right'>
               {groupedItems.map((group, index) => (
                 <div key={index}>
                   <Row gutter={[15, 15]} justify="center">
                     {group.map((item) => (
-                      <Col key={item.id} xs={24} sm={12} md={8}>
+                      <Col key={item.id} xs={24} sm={12} md={8} span={10}>
                         <ItemCard
                           image={item.image}
                           title={item.title}
