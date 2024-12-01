@@ -1,16 +1,39 @@
-install antdesign
+# E-Commerce Project
 
-"One of your dependencies, babel-preset-react-app, is importing the
-"@babel/plugin-proposal-private-property-in-object" package without
-declaring it in its dependencies. This is currently working because
-"@babel/plugin-proposal-private-property-in-object" is already in your
-node_modules folder for unrelated reasons, but it may break at any time."
+This is a complete E-Commerce web application composed of three repositories:
 
+- **Frontend**: [ecom_frontend](https://github.com/KCCHONG1997/ecom_frontend)
+- **Backend**: [ecom_backend](https://github.com/KCCHONG1997/ecom_backend)
+- **Database**: [ecom_db](https://github.com/KCCHONG1997/ecom_db)
 
-DO NOT INSTALL BELOW, IT IS DEPRECATED!
-npm install @babel/plugin-proposal-private-property-in-object --save-dev
+## Recommend to Clone Directory in the Following Structure:
+    .
+    └── SC2006Proj/
+        ├── ecom_backend
+        ├── ecom_db
+        └── ecom_frontend
+        
+## Repository Overview
 
-npm warn deprecated @babel/plugin-proposal-private-property-in-object@7.21.11: This proposal has been merged to the ECMAScript standard and thus this plugin is no longer maintained. Please use @babel/plugin-transform-private-property-in-object instead.
+### For this Repository: [ecom_frontend](https://github.com/KCCHONG1997/ecom_frontend)
 
-INSTALL THIS INSTEAD:
-npm install @babel/plugin-transform-private-property-in-object --save-dev
+The React/TypeScript-based frontend of the application. It provides the user interface for customers to interact with the system.
+
+**Steps to Run:**
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/KCCHONG1997/ecom_frontend.git
+   cd ecom_frontend
+    ```
+
+2. Install dependencies:
+    ```bash
+    npm install
+    ```
+
+3. Start the development server:
+    ```bash
+    npm start
+    ```
+4. Open http://localhost:3000 in your browser.
