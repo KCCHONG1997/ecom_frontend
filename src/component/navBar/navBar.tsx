@@ -52,6 +52,7 @@ const NavBar: React.FC<NavConfig> = (config) => {
 
       if (response.ok) {
         setUser(null); // Clear user state immediately
+        sessionStorage.clear();
         navigate('/login'); // Redirect to login
       } else {
         console.error('Logout failed');
