@@ -1,6 +1,6 @@
 import { Menu, MenuProps, Dropdown, Avatar, Spin } from 'antd';
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Row, Col } from 'antd';
 
 export interface NavConfig {
@@ -18,11 +18,15 @@ interface User {
 
 const NavBar: React.FC<NavConfig> = (config) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [user, setUser] = useState<User | null>(null);
-  const [isLoggingOut, setIsLoggingOut] = useState(false); // Track logout state
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  // const [isAuthenticated, setisAuthenticated] = useState(false);
 
   // Fetch user session
-  const fetchUser = async () => {
+  const autoLoad = async () => {
+    setIsLoading(true);
     try {
       const response = await fetch('http://localhost:5000/api/check-session', {
         credentials: 'include',
@@ -30,17 +34,31 @@ const NavBar: React.FC<NavConfig> = (config) => {
       if (response.ok) {
         const data = await response.json();
         setUser(data.user); // Update user state
+
+        if (sessionStorage.user == undefined) {
+          sessionStorage.setItem("user", JSON.stringify(data.user));
+          const userDetails = JSON.parse(sessionStorage.getItem("user") || "{}");
+          if (userDetails.id) {
+            console.log("User ID:", userDetails.id);
+          } else {
+            console.error("User data is missing or invalid.");
+          }
+        }
       } else {
-        setUser(null); // Clear user state if no session
+        sessionStorage.clear();
+        setUser(null); 
       }
     } catch (error) {
       console.error('Error checking session:', error);
+      setUser(null);
+    } finally{
+      setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchUser(); // Initial session check
-  }, []);
+    autoLoad(); // Initial session check
+  }, [location.pathname]);
 
   const handleLogout = async () => {
     setIsLoggingOut(true); // Start spinner
