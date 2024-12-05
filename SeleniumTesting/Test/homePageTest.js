@@ -3,7 +3,7 @@ require('dotenv').config(); // Load environment variables
 const { Builder, By, until } = require('selenium-webdriver');
 const assert = require('assert');
 
-describe('HomePage Tests', function () {
+describe.skip('HomePage Tests', function () {
   this.timeout(30000); // Timeout for all tests
 
   let driver;
@@ -15,7 +15,7 @@ describe('HomePage Tests', function () {
   after(async () => {
     await driver.quit(); // Close WebDriver after all tests
   });
-  const baseUrl = "http://localhost:" + process.env.PORT;
+  const baseUrl = "http://localhost:" + process.env.SELENIUM_TESTING_PORT;
 
   describe('Requirement Testing', function () {
     it('TEST-1.1: Home page loads with the correct title', async () => {

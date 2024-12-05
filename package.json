@@ -28,7 +28,7 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "test": "mocha tests/*.js --reporter mochawesome --reporter-options reportDir=./reports,reportFilename=report,overwrite=true,html=false,json=true && node ./reports/generateCSVreport.js",
+    "test": "mocha SeleniumTesting/Test/*.js --reporter mochawesome --reporter-options reportDir=./reports,reportFilename=report,overwrite=true,html=false,json=true && node ./reports/generateCSVreport.js",
     "eject": "react-scripts eject"
   },
   "eslintConfig": {

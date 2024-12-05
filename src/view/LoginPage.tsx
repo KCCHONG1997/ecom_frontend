@@ -18,9 +18,9 @@ console.log("API Base URL:", PORT);
 
 const LoginPage: React.FC = () => {
     const navigate = useNavigate();
-    const onLoginSuccess = () => {
-        window.location.reload(); // Refresh the page to re-trigger NavBar's `useEffect`
-    };
+    // const onLoginSuccess = () => {
+    //     window.location.reload(); // Refresh the page to re-trigger NavBar's `useEffect`
+    // };
     const [isLoading, setIsLoading] = useState(false); // Manage loading state
 
     const onFinish: FormProps<FieldType>['onFinish'] = async (values) => {
@@ -35,6 +35,7 @@ const LoginPage: React.FC = () => {
                 body: JSON.stringify({
                     username: values.username,
                     password: values.password,
+                    rememberMe: values.remember,
                 }),
             });
 
