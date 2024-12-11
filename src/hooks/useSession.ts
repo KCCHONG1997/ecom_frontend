@@ -15,7 +15,7 @@ export const useSession = () => {
   const fetchSession = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('http://localhost:5000/api/check-session', { credentials: 'include' });
+      const response = await fetch('http://localhost:5069/api/check-session', { credentials: 'include' });
       if (response.ok) {
         const data = await response.json();
         sessionStorage.setItem("user", JSON.stringify(data.user)); // Save user to sessionStorage
@@ -36,7 +36,7 @@ export const useSession = () => {
   const logout = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('http://localhost:5000/api/logout', {
+      const response = await fetch('http://localhost:5069/api/logout', {
         method: 'POST',
         credentials: 'include',
       });
