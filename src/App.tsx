@@ -8,6 +8,7 @@ import HomePage from './view/HomePage';
 import ShoppingPage from './view/ShoppingPage';
 import NotFoundPage from './global/NotFoundPage';
 import LoginPage from './view/LoginPage';
+import RegisterationPage from './view/RegisterationPage';
 
 const { Header, Footer, Content } = Layout;
 
@@ -46,8 +47,8 @@ const navConfig: NavConfig = {
       label: 'Login'
     },
     {
-      key: 'signup',
-      label: 'Sign Up'
+      key: 'register',
+      label: 'Register'
     }
   ],
 };
@@ -71,6 +72,7 @@ const App: FC = () => (
             <Route path="/shopping" element={<ShoppingPage />} />
             <Route path="/contactus" element={<ShoppingPage />} />
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterationPage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </Content>
