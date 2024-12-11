@@ -1,2 +1,6 @@
 "requirementID","description","status","duration","error"
-"TEST-1.1","Home page loads with the correct title","passed","1579 ms",""
+"TEST-1.1","Home page loads with the correct title","pending","0 ms",""
+"AUTH-1","Login Page should load the username/email and password input field together with submit button","passed","160 ms",""
+"AUTH-2","When user inputs invalid username and password, an error message should show up","passed","1067 ms",""
+"AUTH-3","When user submits an empty form, error messages below the inputs should show up","passed","495 ms",""
+"AUTH-4","When user enters a valid username and password, the system should redirect to the home page","passed","1047 ms",""
