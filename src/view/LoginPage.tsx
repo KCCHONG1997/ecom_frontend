@@ -3,6 +3,7 @@ import type { FormProps } from 'antd';
 import { Button, Checkbox, Form, Input, Spin } from 'antd';
 import { showSuccessMessage, showErrorMessage } from '../utils/messageUtils';
 import { useNavigate } from 'react-router-dom';
+import PORT from '../hooks/usePort';
 
 type FieldType = {
     username: string;
@@ -10,10 +11,7 @@ type FieldType = {
     remember?: boolean;
 };
 
-const PORT =
-    process.env.NODE_ENV === 'production'
-        ? `${process.env.REACT_APP_BACKEND_PROD_PORT}`
-        : `${process.env.REACT_APP_BACKEND_DEV_PORT}`;
+//
 console.log("API Base URL:", PORT);
 
 const LoginPage: React.FC = () => {
