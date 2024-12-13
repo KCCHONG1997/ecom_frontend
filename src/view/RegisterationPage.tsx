@@ -65,7 +65,7 @@ const RegistrationPage: React.FC = () => {
             label="Phone Number"
             rules={[
               { required: true, message: 'Phone Number is required!' },
-              { pattern: /^\d{10}$/, message: 'Phone Number must be 10 digits!' },
+              { pattern: /^\d{8}$/, message: 'Phone Number must be 8 digits!' },
             ]}
           >
             <Input placeholder="Enter your phone number" />
