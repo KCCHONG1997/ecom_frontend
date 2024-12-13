@@ -48,10 +48,11 @@ const RegistrationPage: React.FC = () => {
         showErrorMessage(`Login Failed: ${jsonData.error || 'Unknown error'}`);
         return;
       }
-      // Handle success
+      // // Handle success
+      console.log(response);
       showSuccessMessage('Successfully logged in!');
-      navigate('/'); // Redirect to the home page
-      window.location.reload();
+      // navigate('/'); // Redirect to the home page
+      // window.location.reload();
     } catch (error) {
       showErrorMessage('Failed to connect to the server.');
       console.error('Error:', error);
