@@ -40,6 +40,7 @@ const RegistrationPage: React.FC = () => {
               <Input placeholder="Enter your first name" />
             </Form.Item>
           </Col>
+
           <Col span={12}>
             <Form.Item
               name="lastName"
@@ -50,6 +51,7 @@ const RegistrationPage: React.FC = () => {
             </Form.Item>
           </Col>
         </Row>
+
         <Form.Item
           name="email"
           label="Email"
@@ -57,6 +59,18 @@ const RegistrationPage: React.FC = () => {
         >
           <Input placeholder="Enter your email" />
         </Form.Item>
+
+        <Form.Item
+            name="phoneNumber"
+            label="Phone Number"
+            rules={[
+              { required: true, message: 'Phone Number is required!' },
+              { pattern: /^\d{10}$/, message: 'Phone Number must be 10 digits!' },
+            ]}
+          >
+            <Input placeholder="Enter your phone number" />
+          </Form.Item>
+
         <Form.Item
           name="password"
           label="Password"
@@ -64,6 +78,7 @@ const RegistrationPage: React.FC = () => {
         >
           <Input.Password placeholder="Enter your password" />
         </Form.Item>
+
         <Form.Item
           name="confirmPassword"
           label="Confirm Password"
@@ -82,6 +97,7 @@ const RegistrationPage: React.FC = () => {
         >
           <Input.Password placeholder="Confirm your password" />
         </Form.Item>
+        
         <Form.Item>
           <Button type="primary" htmlType="submit" block>
             Register
