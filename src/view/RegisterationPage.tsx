@@ -1,10 +1,39 @@
 import React from 'react';
-import { Button, Form, Input, Row, Col, message } from 'antd';
+import { Button, Form, Input, Row, Col, message, FormProps } from 'antd';
+import PORT from '../hooks/usePort';
 
 const RegistrationPage: React.FC = () => {
-  const onFinish = (values: object) => {
+
+
+  // Remember to use type to define the field type so the calling of object item can be done
+  type FieldType = {
+    firstName: string,
+    lastName: string,
+    username: string,
+    email: string,
+    phoneNumber: string,
+    password: string,
+    confirmPassword: string
+  };
+
+  // await and async function is needed
+  const onFinish: FormProps<FieldType>['onFinish'] = async (values) => {
     console.log('Success:', values);
-    message.success('Registration Successful!');
+
+    //API fetch call
+    const response = await fetch(`http://localhost:${PORT}/api/register`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include', // Include session cookies
+      body: JSON.stringify({
+        username: values.username,
+        password: values.password,
+      }),
+    });
+
+    // message.success('Registration Successful!');
   };
 
   const onFinishFailed = (errorInfo: object) => {
@@ -61,15 +90,15 @@ const RegistrationPage: React.FC = () => {
         </Form.Item>
 
         <Form.Item
-            name="phoneNumber"
-            label="Phone Number"
-            rules={[
-              { required: true, message: 'Phone Number is required!' },
-              { pattern: /^\d{8}$/, message: 'Phone Number must be 8 digits!' },
-            ]}
-          >
-            <Input placeholder="Enter your phone number" />
-          </Form.Item>
+          name="phoneNumber"
+          label="Phone Number"
+          rules={[
+            { required: true, message: 'Phone Number is required!' },
+            { pattern: /^\d{8}$/, message: 'Phone Number must be 8 digits!' },
+          ]}
+        >
+          <Input placeholder="Enter your phone number" />
+        </Form.Item>
 
         <Form.Item
           name="password"
@@ -97,7 +126,7 @@ const RegistrationPage: React.FC = () => {
         >
           <Input.Password placeholder="Confirm your password" />
         </Form.Item>
-        
+
         <Form.Item>
           <Button type="primary" htmlType="submit" block>
             Register
