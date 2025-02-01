@@ -9,6 +9,9 @@ import ShoppingPage from './view/ShoppingPage';
 import NotFoundPage from './global/NotFoundPage';
 import LoginPage from './view/LoginPage';
 import RegisterationPage from './view/RegisterationPage';
+import LearnerProfilePage from './view/LearnerProfilePage';
+import ContactUsPage from './view/ContactUsPage';
+import SearchCoursePage from './view/SearchCoursePage';
 
 const { Header, Footer, Content } = Layout;
 
@@ -35,10 +38,6 @@ const navConfig: NavConfig = {
     {
       key: 'contactus',
       label: 'Contact Us',
-      children: [
-        { key: 'business', label: 'Business' },
-        { key: 'feedback', label: 'Feedback' },
-      ],
     },
   ],
   rightNavItems: [
@@ -74,6 +73,10 @@ const App: FC = () => (
             {/* <Route path="/contactus" element={<ShoppingPage />} /> */}
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterationPage />} />
+            <Route path="/learnerProfile" element={<LearnerProfilePage />} />
+            <Route path="/contactus" element={<ContactUsPage />} />
+            <Route path="/searchCourse" element={<SearchCoursePage />} />
+
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </Content>
