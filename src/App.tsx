@@ -12,6 +12,7 @@ import RegisterationPage from './view/RegisterationPage';
 import LearnerProfilePage from './view/LearnerProfilePage';
 import ContactUsPage from './view/ContactUsPage';
 import SearchCoursePage from './view/SearchCoursePage';
+import AdminManagementPage from './view/AdminManagementPage';
 
 const { Header, Footer, Content } = Layout;
 
@@ -24,16 +25,9 @@ const navConfig: NavConfig = {
       label: 'Home',
     },
     {
-      key: 'shopping',
-      label: 'Shopping',
+      key: 'searchCourse',
+      label: 'Upskill Now',
       style: { backgroundColor: 'red' },
-      children: [
-        {
-          key: 'electronics',
-          label: 'Electronics',
-          style: { backgroundColor: 'red', margin: 0, width: '100%' },
-        },
-      ],
     },
     {
       key: 'contactus',
@@ -76,6 +70,7 @@ const App: FC = () => (
             <Route path="/learnerProfile" element={<LearnerProfilePage />} />
             <Route path="/contactus" element={<ContactUsPage />} />
             <Route path="/searchCourse" element={<SearchCoursePage />} />
+            <Route path="/adminManagementPage" element={<AdminManagementPage />} />
 
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
