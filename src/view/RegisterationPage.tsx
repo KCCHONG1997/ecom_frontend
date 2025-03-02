@@ -121,9 +121,9 @@ const RegistrationPage: React.FC = () => {
         </Form.Item>
 
         {/* Organization ID with a Search Button */}
-        <Form.Item label="Organization ID" name="organizationID">
+        <Form.Item label="LectureTeam ID" name="lectureTeamID">
           <Input
-            placeholder="Enter your Organization ID"
+            placeholder="Enter your LectureTeam ID"
             addonAfter={
               <Button onClick={handleSearchOrg} loading={searching} icon={<SearchOutlined />} />
             }
@@ -136,14 +136,6 @@ const RegistrationPage: React.FC = () => {
           rules={[{ required: true, message: 'Organization name is required!' }]}
         >
           <Input placeholder="Organization name will be autofilled if ID is found" />
-        </Form.Item>
-
-        <Form.Item
-          name="website"
-          label="Website"
-          rules={[{ type: 'url', message: 'Please enter a valid URL!' }]}
-        >
-          <Input placeholder="Organization website will be autofilled if ID is found" />
         </Form.Item>
 
         <Form.Item
