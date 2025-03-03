@@ -1,13 +1,30 @@
 import React, { useState } from 'react';
 import { Button, Form, Input, Row, Col, message, Tabs } from 'antd';
 import { SearchOutlined } from '@ant-design/icons';
+import PORT from '../hooks/usePort';
+import { Learner } from '../../models/Learner'
 
 const { TabPane } = Tabs;
 
 const RegistrationPage: React.FC = () => {
-  // Handler for Learner registration form submission
-  const onFinishLearner = (values: object) => {
+  
+  const onFinishLearner = async (values: Learner) => {
     console.log('Learner Registration Success:', values);
+    try{
+      const response = await fetch(`http://localhost:${PORT}/api/login`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        credentials: 'include', 
+        body: JSON.stringify({
+            username: values.username,
+            password: values.password_hash,
+        }),
+    });
+    } catch{
+
+    }
     message.success('Learner Registration Successful!');
   };
 

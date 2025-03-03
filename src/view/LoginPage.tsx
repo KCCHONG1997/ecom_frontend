@@ -11,9 +11,6 @@ type FieldType = {
     remember?: boolean;
 };
 
-//
-console.log("API Base URL:", PORT);
-
 const LoginPage: React.FC = () => {
     const navigate = useNavigate();
     const onLoginSuccess = () => {
