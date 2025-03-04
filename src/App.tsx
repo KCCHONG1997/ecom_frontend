@@ -13,6 +13,8 @@ import LearnerProfilePage from './view/LearnerProfilePage';
 import ContactUsPage from './view/ContactUsPage';
 import SearchCoursePage from './view/SearchCoursePage';
 import AdminManagementPage from './view/AdminManagementPage';
+import ForgetPasswordPage from './view/ForgetPasswordPage';
+import AdminCreationPage from './view/AdminCreationPage';
 
 const { Header, Footer, Content } = Layout;
 
@@ -71,6 +73,8 @@ const App: FC = () => (
             <Route path="/contactus" element={<ContactUsPage />} />
             <Route path="/searchCourse" element={<SearchCoursePage />} />
             <Route path="/adminManagementPage" element={<AdminManagementPage />} />
+            <Route path="/forgetpassword" element={<ForgetPasswordPage />} />
+            <Route path="/adminCreation" element={<AdminCreationPage />} />
 
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
