@@ -97,6 +97,17 @@ const LoginPage: React.FC = () => {
                             Submit
                         </Button>
                     </Form.Item>
+
+                    <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
+                        <Button
+                            type="link"
+                            onClick={() => navigate('/forgetpassword')}
+                            style={{ padding: 0 }}
+                        >
+                            Forgot Password?
+                        </Button>
+                    </Form.Item>
+
                 </Form>
             </section>
         </Spin>
