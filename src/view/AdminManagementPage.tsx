@@ -2,7 +2,7 @@
 
 import React, { useMemo, useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Layout, Card, Breadcrumb, Button, Modal, Form, Input, message } from 'antd';
+import { Layout, Card, Breadcrumb, Button, message } from 'antd';
 import { AgGridReact } from 'ag-grid-react';
 import {
   ClientSideRowModelModule,
@@ -16,6 +16,7 @@ import {
   TextFilterModule,
   DateFilterModule,
   CsvExportModule,
+  CellValueChangedEvent,
 } from 'ag-grid-community';
 
 // Import styles
@@ -115,11 +116,6 @@ const AdminManagementPage = () => {
   // Store grid API reference for exporting.
   const [gridApi, setGridApi] = useState<any>(null);
 
-  // Modal state and form instance for editing
-  const [isEditModalVisible, setIsEditModalVisible] = useState(false);
-  const [editingRow, setEditingRow] = useState<any>(null);
-  const [form] = Form.useForm();
-
   // Update rowData when selectedTable changes
   useEffect(() => {
     setRowData(dummyData[selectedTable]);
@@ -148,40 +144,22 @@ const AdminManagementPage = () => {
     }
   }, [gridApi]);
 
-  // Handler for opening the edit modal
-  const handleEditClick = () => {
-    const selectedRows = gridApi.getSelectedRows();
-    if (selectedRows.length !== 1) {
-      message.error('Please select exactly one row to edit.');
-      return;
-    }
-    setEditingRow(selectedRows[0]);
-    form.setFieldsValue(selectedRows[0]);
-    setIsEditModalVisible(true);
-  };
+  // Inline editing is now done directly in the grid.
+  // Enable single click editing for Learners, Producer, and Courses.
+  // const enableSingleClickEdit =
+  //   selectedTable === 'Learners' || selectedTable === 'Producer' || selectedTable === 'Courses';
 
-  // Handler for saving the changes from the modal
-  const handleModalOk = () => {
-    form
-      .validateFields()
-      .then((values) => {
-        // Update the rowData with the edited values
-        const updatedData = rowData.map((row) =>
-          row.id === editingRow.id ? { ...row, ...values } : row
-        );
-        setRowData(updatedData);
-        message.success('Data updated successfully.');
-        setIsEditModalVisible(false);
-      })
-      .catch((info) => {
-        console.log('Validate Failed:', info);
-      });
-  };
-
-  const handleModalCancel = () => {
-    setIsEditModalVisible(false);
-  };
-
+  const onCellValueChanged = useCallback(
+    (event: CellValueChangedEvent) => {
+      if (event.rowIndex === null) return; // or handle null case appropriately
+      const updatedData = [...rowData];
+      updatedData[event.rowIndex] = event.data;
+      setRowData(updatedData);
+      message.success('Data updated successfully.');
+    },
+    [rowData]
+  );
+    
   return (
     <Layout style={{ minHeight: '100vh', background: '#141414' }}>
       <Content style={{ padding: '24px' }}>
@@ -198,27 +176,20 @@ const AdminManagementPage = () => {
           ))}
         </Breadcrumb>
 
-        <Button
-          onClick={() => navigate('/adminCreation')}
-          type="primary"
-          style={{ marginBottom: 16, marginRight: '5px' }}
-        >
-          Create New Admin Account
-        </Button>
+        {selectedTable === 'Admin' && (
+          <Button
+            onClick={() => navigate('/adminCreation')}
+            type="primary"
+            style={{ marginBottom: 16, marginRight: '5px' }}
+          >
+            Create New Admin Account
+          </Button>
+        )}
 
         {/* Export Button */}
         <Button onClick={exportSelectedRows} type="primary" style={{ marginBottom: 16, marginRight: '5px' }}>
           Export Selected Rows as CSV
         </Button>
-
-        {/* Conditionally render Edit button for Learners, Producer, and Courses */}
-        {(selectedTable === 'Learners' ||
-          selectedTable === 'Producer' ||
-          selectedTable === 'Courses') && (
-          <Button onClick={handleEditClick} type="primary" style={{ marginBottom: 16 }}>
-            Edit Selected Row
-          </Button>
-        )}
 
         <div className="aggrid_div" style={{ height: 500, width: '100%' }}>
           <AgGridReact
@@ -229,6 +200,8 @@ const AdminManagementPage = () => {
             rowSelection={rowSelection}
             onGridReady={onGridReady}
             rowHeight={30}
+            // singleClickEdit={enableSingleClickEdit}
+            onCellValueChanged={onCellValueChanged}
             onSelectionChanged={(params) => {
               const selectedRows = params.api.getSelectedRows();
               console.log('Selected Rows:', selectedRows);
@@ -243,79 +216,6 @@ const AdminManagementPage = () => {
         >
           <pre style={{ color: '#fff' }}>{JSON.stringify(dummyData[selectedTable], null, 2)}</pre>
         </Card>
-
-        {/* Edit Modal */}
-        <Modal
-          title="Edit Details"
-          visible={isEditModalVisible}
-          onOk={handleModalOk}
-          onCancel={handleModalCancel}
-        >
-          <Form form={form} layout="vertical">
-            {selectedTable === 'Learners' && (
-              <>
-                <Form.Item label="Name" name="name" rules={[{ required: true, message: 'Please enter a name' }]}>
-                  <Input />
-                </Form.Item>
-                <Form.Item label="Email" name="email" rules={[{ required: true, message: 'Please enter an email' }]}>
-                  <Input />
-                </Form.Item>
-                <Form.Item
-                  label="Enrollment Date"
-                  name="enrollmentDate"
-                  rules={[{ required: true, message: 'Please enter the enrollment date' }]}
-                >
-                  <Input />
-                </Form.Item>
-              </>
-            )}
-            {selectedTable === 'Producer' && (
-              <>
-                <Form.Item
-                  label="Producer Name"
-                  name="producerName"
-                  rules={[{ required: true, message: 'Please enter the producer name' }]}
-                >
-                  <Input />
-                </Form.Item>
-                <Form.Item
-                  label="Contact"
-                  name="contact"
-                  rules={[{ required: true, message: 'Please enter the contact info' }]}
-                >
-                  <Input />
-                </Form.Item>
-                <Form.Item
-                  label="Website"
-                  name="website"
-                  rules={[{ required: true, message: 'Please enter the website' }]}
-                >
-                  <Input />
-                </Form.Item>
-              </>
-            )}
-            {selectedTable === 'Courses' && (
-              <>
-                <Form.Item label="Title" name="title" rules={[{ required: true, message: 'Please enter the course title' }]}>
-                  <Input />
-                </Form.Item>
-                <Form.Item
-                  label="Instructor"
-                  name="instructor"
-                  rules={[{ required: true, message: 'Please enter the instructor name' }]}
-                >
-                  <Input />
-                </Form.Item>
-                <Form.Item label="Category" name="category" rules={[{ required: true, message: 'Please enter the category' }]}>
-                  <Input />
-                </Form.Item>
-                <Form.Item label="Date" name="date" rules={[{ required: true, message: 'Please enter the course date' }]}>
-                  <Input />
-                </Form.Item>
-              </>
-            )}
-          </Form>
-        </Modal>
       </Content>
     </Layout>
   );
