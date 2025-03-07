@@ -61,7 +61,6 @@ const App: FC = () => (
             navLayout={navConfig.navLayout}
             leftNavItems={navConfig.leftNavItems}
             rightNavItems={navConfig.rightNavItems}
-            // user = sessionStorage.
           />
         </Header>
         <Content style={{ flex: 1, padding: '16px, 0px', overflow: 'hidden', }}> {/* Flex to fill remaining space */}
