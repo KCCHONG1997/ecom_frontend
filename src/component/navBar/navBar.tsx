@@ -17,6 +17,9 @@ const NavBar: React.FC<NavConfig> = (config) => {
   const { user, isLoading, fetchSession, logout } = useSession(); // Using the custom session hook
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
+  //shawn added
+  const [userRole, setUserRole] = useState<string | null>(null);
+
   // Fetch session whenever the route changes
   useEffect(() => {
     fetchSession();
@@ -37,6 +40,14 @@ const NavBar: React.FC<NavConfig> = (config) => {
   const menuItems: MenuProps['items'] = [
     { key: 'profile', label: 'Profile' },
     { key: 'logout', label: 'Logout', onClick: handleLogout },
+  ];
+
+  //shawn added
+  const leftNavItems = [
+    ...config.leftNavItems || [],
+    ...(userRole === "producer"
+      ? [{ key: "CreateCoursePage", label: "Create Course" }]
+      : [])
   ];
 
   return (

@@ -13,8 +13,12 @@ import LearnerProfilePage from './view/LearnerProfilePage';
 import ContactUsPage from './view/ContactUsPage';
 import SearchCoursePage from './view/SearchCoursePage';
 import AdminManagementPage from './view/AdminManagementPage';
+import CreateCoursePage from './view/CreateCoursePage'
 
 const { Header, Footer, Content } = Layout;
+
+//shawn added
+const userRole = sessionStorage.getItem("userRole");
 
 const navConfig: NavConfig = {
   navBarTheme: 'dark',
@@ -32,7 +36,7 @@ const navConfig: NavConfig = {
     {
       key: 'contactus',
       label: 'Contact Us',
-    },
+    }, ...(userRole === "producer" ? [{ key: "CreateCoursePage", label: "Create Course" }] : []),
   ],
   rightNavItems: [
     {
@@ -71,6 +75,10 @@ const App: FC = () => (
             <Route path="/contactus" element={<ContactUsPage />} />
             <Route path="/searchCourse" element={<SearchCoursePage />} />
             <Route path="/adminManagementPage" element={<AdminManagementPage />} />
+
+            <Route path="/CreateCoursePage" element={<CreateCoursePage />} />
+
+            
 
             <Route path="*" element={<NotFoundPage />} />
           </Routes>

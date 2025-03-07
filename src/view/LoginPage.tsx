@@ -43,6 +43,11 @@ const LoginPage: React.FC = () => {
             // Store user data in sessionStorage
             sessionStorage.setItem('user', JSON.stringify(jsonData.user));
 
+            //shawn added
+            if (jsonData.user && jsonData.user.role) {
+                sessionStorage.setItem('userRole', jsonData.user.role); 
+            }
+
             // Handle success
             showSuccessMessage('Successfully logged in!');
             navigate('/'); // Redirect to the home page
@@ -58,6 +63,14 @@ const LoginPage: React.FC = () => {
     const onFinishFailed: FormProps<FieldType>['onFinishFailed'] = (errorInfo) => {
         console.log('Form submission failed:', errorInfo);
     };
+
+    
+
+    //shawn added for conditonal render the nav bar
+    const handleLogin = (role: string) => {
+        sessionStorage.setItem("userRole", role); // Store user role
+        window.location.reload(); // Reload to update NavBar
+      };
 
     return (
         <Spin spinning={isLoading} size="large">
@@ -97,6 +110,19 @@ const LoginPage: React.FC = () => {
                             Submit
                         </Button>
                     </Form.Item>
+
+                
+                    <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
+                        <Button onClick={() => handleLogin('producer')} style={{ marginRight: '10px' }}>
+                            Simulate Producer Login
+                        </Button>
+                        <Button onClick={() => handleLogin('learner')}>
+                            Simulate Learner Login
+                        </Button>
+                    </Form.Item>
+
+
+                    
                 </Form>
             </section>
         </Spin>
