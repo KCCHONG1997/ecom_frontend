@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useMemo, useState, useCallback, useEffect } from 'react';
-import { Layout, Card, Breadcrumb, Button } from 'antd';
+import { useNavigate } from 'react-router-dom';
+import { Layout, Card, Breadcrumb, Button, message } from 'antd';
 import { AgGridReact } from 'ag-grid-react';
 import {
   ClientSideRowModelModule,
@@ -15,6 +16,7 @@ import {
   TextFilterModule,
   DateFilterModule,
   CsvExportModule,
+  CellValueChangedEvent,
 } from 'ag-grid-community';
 
 // Import styles
@@ -107,6 +109,7 @@ const tableColumns: Record<string, ColDef[]> = {
 };
 
 const AdminManagementPage = () => {
+  const navigate = useNavigate();
   const [selectedTable, setSelectedTable] = useState<string>('Courses');
   // Set up rowData state to hold current table data.
   const [rowData, setRowData] = useState<any[]>(dummyData[selectedTable]);
@@ -118,11 +121,9 @@ const AdminManagementPage = () => {
     setRowData(dummyData[selectedTable]);
   }, [selectedTable]);
 
-  // Memoized column definitions (ensuring only ONE checkbox column)
+  // Memoized column definitions
   const columnDefs = useMemo<ColDef[]>(() => {
-    return [
-      ...tableColumns[selectedTable], // Add other columns dynamically
-    ];
+    return [...tableColumns[selectedTable]];
   }, [selectedTable]);
 
   // Memoized row selection options
@@ -143,6 +144,22 @@ const AdminManagementPage = () => {
     }
   }, [gridApi]);
 
+  // Inline editing is now done directly in the grid.
+  // Enable single click editing for Learners, Producer, and Courses.
+  // const enableSingleClickEdit =
+  //   selectedTable === 'Learners' || selectedTable === 'Producer' || selectedTable === 'Courses';
+
+  const onCellValueChanged = useCallback(
+    (event: CellValueChangedEvent) => {
+      if (event.rowIndex === null) return; // or handle null case appropriately
+      const updatedData = [...rowData];
+      updatedData[event.rowIndex] = event.data;
+      setRowData(updatedData);
+      message.success('Data updated successfully.');
+    },
+    [rowData]
+  );
+    
   return (
     <Layout style={{ minHeight: '100vh', background: '#141414' }}>
       <Content style={{ padding: '24px' }}>
@@ -159,8 +176,18 @@ const AdminManagementPage = () => {
           ))}
         </Breadcrumb>
 
+        {selectedTable === 'Admin' && (
+          <Button
+            onClick={() => navigate('/adminCreation')}
+            type="primary"
+            style={{ marginBottom: 16, marginRight: '5px' }}
+          >
+            Create New Admin Account
+          </Button>
+        )}
+
         {/* Export Button */}
-        <Button onClick={exportSelectedRows} type="primary" style={{ marginBottom: 16 }}>
+        <Button onClick={exportSelectedRows} type="primary" style={{ marginBottom: 16, marginRight: '5px' }}>
           Export Selected Rows as CSV
         </Button>
 
@@ -173,6 +200,8 @@ const AdminManagementPage = () => {
             rowSelection={rowSelection}
             onGridReady={onGridReady}
             rowHeight={30}
+            // singleClickEdit={enableSingleClickEdit}
+            onCellValueChanged={onCellValueChanged}
             onSelectionChanged={(params) => {
               const selectedRows = params.api.getSelectedRows();
               console.log('Selected Rows:', selectedRows);
