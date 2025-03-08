@@ -71,6 +71,8 @@ const SearchCoursePage: React.FC = () => {
       const internalData = await internalCoursesPromise;
       const externalData = await externalCoursesPromise;
 
+      console.log("externalData: ", externalData);
+
       const internalCourses: Course[] = (internalData.data || []).map((course: any) => ({
         externalReferenceNumber: course.external_reference_number,
         title: course.name,
@@ -329,6 +331,20 @@ const SearchCoursePage: React.FC = () => {
               {selectedCourse ? (
                 <>
                   <Title level={2}>{selectedCourse.title}</Title>
+                  {/* BUTTON HERE */}
+                  <Button
+                    type="primary"
+                    ghost
+                    onClick={() =>
+                      window.open(
+                        `https://www.myskillsfuture.gov.sg/content/portal/en/training-exchange/course-directory/course-detail.html?courseReferenceNumber=${selectedCourse.externalReferenceNumber}`,
+                        '_blank'
+                      )
+                    }
+                    style={{ marginTop: 15, marginBottom: 15 }}
+                  >
+                    View on SkillsFuture SG
+                  </Button>
                   {selectedCourse.detailImageURL && (
                     <img
                       src={selectedCourse.detailImageURL.startsWith('/')
