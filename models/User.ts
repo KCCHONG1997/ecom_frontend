@@ -1,5 +1,3 @@
-// corresspond to UserAccount in SQL
-
 export interface User { // same as UserAccount in DB table
     user_id: number;
     username: string;
@@ -7,6 +5,7 @@ export interface User { // same as UserAccount in DB table
     password_hash: string;
     first_name: string;
     last_name: string;
+    phone: string;  // New phone property
     role: UserRole;
     created_at: Date;
 }
@@ -24,6 +23,7 @@ export class UserAccount implements User {
     private _password_hash: string;
     private _first_name: string;
     private _last_name: string;
+    private _phone: string;  // New private phone property
     private _role: UserRole;
     private _created_at: Date;
 
@@ -34,6 +34,7 @@ export class UserAccount implements User {
         password_hash: string,
         first_name: string,
         last_name: string,
+        phone: string,  // New parameter for phone number
         role: UserRole,
         created_at: Date
     ) {
@@ -43,6 +44,7 @@ export class UserAccount implements User {
         this._password_hash = password_hash;
         this._first_name = first_name;
         this._last_name = last_name;
+        this._phone = phone;  // Assign the phone number
         this._role = role;
         this._created_at = created_at;
     }
@@ -95,6 +97,14 @@ export class UserAccount implements User {
 
     set last_name(value: string) {
         this._last_name = value;
+    }
+    
+    get phone(): string {
+        return this._phone;
+    }
+    
+    set phone(value: string) {
+        this._phone = value;
     }
 
     get role(): UserRole {

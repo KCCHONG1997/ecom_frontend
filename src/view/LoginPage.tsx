@@ -14,19 +14,19 @@ type FieldType = {
 const LoginPage: React.FC = () => {
     const navigate = useNavigate();
     const onLoginSuccess = () => {
-        window.location.reload(); // Refresh the page to re-trigger NavBar's `useEffect`
+        window.location.reload();
     };
-    const [isLoading, setIsLoading] = useState(false); // Manage loading state
+    const [isLoading, setIsLoading] = useState(false);
 
     const onFinish: FormProps<FieldType>['onFinish'] = async (values) => {
-        setIsLoading(true); // Start the spinner
+        setIsLoading(true);
         try {
             const response = await fetch(`http://localhost:${PORT}/api/login`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                credentials: 'include', // Include session cookies
+                credentials: 'include',
                 body: JSON.stringify({
                     username: values.username,
                     password: values.password,
@@ -40,18 +40,16 @@ const LoginPage: React.FC = () => {
                 return;
             }
 
-            // Store user data in sessionStorage
             sessionStorage.setItem('user', JSON.stringify(jsonData.user));
 
-            // Handle success
             showSuccessMessage('Successfully logged in!');
-            navigate('/'); // Redirect to the home page
+            navigate('/');
             window.location.reload();
         } catch (error) {
             showErrorMessage('Failed to connect to the server.');
             console.error('Error:', error);
         } finally {
-            setIsLoading(false); // Stop the spinner
+            setIsLoading(false);
         }
     };
 
