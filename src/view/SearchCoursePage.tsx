@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Layout, Row, Col, Input, Card, Typography, List, Select, DatePicker, Spin, Button, Tag } from 'antd';
+import { Layout, Row, Col, Input, Card, Typography, List, Select, DatePicker, Spin, Button, Tag, Tabs } from 'antd';
 import moment from 'moment';
 import { showErrorMessage } from '../utils/messageUtils';
 import { useNavigate } from 'react-router-dom';
@@ -8,8 +8,8 @@ const { Content } = Layout;
 const { Title, Paragraph } = Typography;
 const { Search } = Input;
 const { Option } = Select;
+const { TabPane } = Tabs;
 
-// Define the Course type with additional image fields and modeOfTrainings.
 export type Course = {
   externalReferenceNumber: string;
   title: string;
@@ -24,6 +24,7 @@ export type Course = {
   detailImageURL?: string;
   url?: string;
   modeOfTrainings?: { code: string; description: string }[];
+  source?: string; // "internal" or "myskillsfuture"
 };
 
 const SearchCoursePage: React.FC = () => {
@@ -32,42 +33,62 @@ const SearchCoursePage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
 
-  // Filter states
   const [filterText, setFilterText] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | undefined>(undefined);
   const [selectedProvider, setSelectedProvider] = useState<string | undefined>(undefined);
   const [selectedDate, setSelectedDate] = useState<moment.Moment | null>(null);
+  const [selectedSource, setSelectedSource] = useState<string | undefined>(undefined);
 
-  // Keyword states: one for immediate input, one for actual search trigger.
   const [inputKeyword, setInputKeyword] = useState<string>('business');
   const [keyword, setKeyword] = useState<string>('business');
 
-  // Pagination state for "Load More" functionality.
   const [page, setPage] = useState<number>(1);
-  const [hasMore, setHasMore] = useState<boolean>(true);
-  const pageSize = 15;
+  // const pageSize = 15;
 
-  // Fetch courses from the backend and transform the data.
-  const fetchCoursesFromAPI = async (pageToLoad: number) => {
+  const [hoverLoadMore, setHoverLoadMore] = useState<boolean>(false);
+
+  // Combined fetch: fetch internal courses (only on page 1) and external courses per page.
+  const fetchCombinedCourses = async (pageToLoad: number) => {
     setIsLoading(true);
     try {
-      const response = await fetch(
+      const internalCoursesPromise =
+        pageToLoad === 1
+          ? fetch(`http://localhost:5000/api/getAllCourses?keyword=${encodeURIComponent(keyword)}`, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include'
+          }).then(res => res.json())
+          : Promise.resolve({ data: [] });
+      const externalCoursesPromise = fetch(
         `http://localhost:5000/api/skillsfuture/courses?keyword=${encodeURIComponent(keyword)}&page=${pageToLoad}`,
         {
           method: 'GET',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include'
         }
-      );
-      const text = await response.text();
-      console.log("Raw response:", text);
-      const data = JSON.parse(text);
-      if (!response.ok) {
-        showErrorMessage(`Failed to fetch courses: ${data.error || 'Unknown error'}`);
-        return;
-      }
-      // Transform the data to the Course shape.
-      const transformedCourses: Course[] = data.data.courses.map((course: any) => ({
+      ).then(res => res.json());
+
+      const internalData = await internalCoursesPromise;
+      const externalData = await externalCoursesPromise;
+
+      const internalCourses: Course[] = (internalData.data || []).map((course: any) => ({
+        externalReferenceNumber: course.external_reference_number,
+        title: course.name,
+        content: course.description,
+        category: course.category || '',
+        provider: course.training_provider_alias || '',
+        date: course.created_at ? course.created_at.split('T')[0] : '',
+        objective: '',
+        totalCostOfTrainingPerTrainee: course.total_cost || 0,
+        totalTrainingDurationHour: course.total_training_hours || 0,
+        tileImageURL: course.tile_image_url || '',
+        detailImageURL: '',
+        url: course.url || '',
+        modeOfTrainings: [],
+        source: 'internal'
+      }));
+
+      const externalCourses: Course[] = (externalData.data.courses || []).map((course: any) => ({
         externalReferenceNumber: course.externalReferenceNumber,
         title: course.title,
         content: course.content,
@@ -84,20 +105,21 @@ const SearchCoursePage: React.FC = () => {
           ? (course.detailImageURL.startsWith('/') ? `https://www.myskillsfuture.gov.sg${course.detailImageURL}` : course.detailImageURL)
           : '',
         url: course.url || '',
-        modeOfTrainings: course.modeOfTrainings || []
+        modeOfTrainings: course.modeOfTrainings || [],
+        source: course.source || 'myskillsfuture'
       }));
+
+      const combinedCourses = [...internalCourses, ...externalCourses];
+
       if (pageToLoad === 1) {
-        setCoursesData(transformedCourses);
+        setCoursesData(combinedCourses);
       } else {
         setCoursesData(prev => {
-          const newCourses = transformedCourses.filter(course => !prev.some(c => c.externalReferenceNumber === course.externalReferenceNumber));
+          const newCourses = combinedCourses.filter(
+            course => !prev.some(c => c.externalReferenceNumber === course.externalReferenceNumber)
+          );
           return [...prev, ...newCourses];
         });
-      }
-      if (transformedCourses.length < pageSize) {
-        setHasMore(false);
-      } else {
-        setHasMore(true);
       }
     } catch (error) {
       showErrorMessage('Failed to connect to the server.');
@@ -107,42 +129,49 @@ const SearchCoursePage: React.FC = () => {
     }
   };
 
-  // When keyword changes, reset page and data, then fetch first page.
   useEffect(() => {
     setPage(1);
-    setHasMore(true);
-    fetchCoursesFromAPI(1);
+    fetchCombinedCourses(1);
   }, [keyword]);
 
-  // Compute unique categories and providers.
+  const allCourses = useMemo(() => coursesData, [coursesData]);
   const categories = useMemo(
-    () => Array.from(new Set(coursesData.map(course => course.category))),
-    [coursesData]
+    () => Array.from(new Set(allCourses.map(course => course.category))),
+    [allCourses]
   );
   const providers = useMemo(
-    () => Array.from(new Set(coursesData.map(course => course.provider))),
-    [coursesData]
+    () => Array.from(new Set(allCourses.map(course => course.provider))),
+    [allCourses]
   );
+  // const sources = useMemo(
+  //   () => Array.from(new Set(allCourses.map(course => course.source))),
+  //   [allCourses]
+  // );
 
-  // Filter courses based on title, category, provider, and date.
   const filteredCourses = useMemo(() => {
-    return coursesData.filter(course => {
-      const matchesText = course.title.toLowerCase().includes(filterText.toLowerCase());
-      const matchesCategory = selectedCategory ? course.category === selectedCategory : true;
-      const matchesProvider = selectedProvider ? course.provider === selectedProvider : true;
-      const matchesDate = selectedDate ? course.date === selectedDate.format('YYYY-MM-DD') : true;
-      return matchesText && matchesCategory && matchesProvider && matchesDate;
+    return allCourses.filter(course => {
+      if (selectedSource) {
+        return course.source === selectedSource &&
+          course.title.toLowerCase().includes(filterText.toLowerCase()) &&
+          (selectedCategory ? course.category === selectedCategory : true) &&
+          (selectedProvider ? course.provider === selectedProvider : true) &&
+          (selectedDate ? course.date === selectedDate.format('YYYY-MM-DD') : true);
+      } else {
+        if (course.source === 'internal') return true;
+        return course.title.toLowerCase().includes(filterText.toLowerCase()) &&
+          (selectedCategory ? course.category === selectedCategory : true) &&
+          (selectedProvider ? course.provider === selectedProvider : true) &&
+          (selectedDate ? course.date === selectedDate.format('YYYY-MM-DD') : true);
+      }
     });
-  }, [coursesData, filterText, selectedCategory, selectedProvider, selectedDate]);
+  }, [allCourses, filterText, selectedCategory, selectedProvider, selectedDate, selectedSource]);
 
-  // Handler for "Load More" button.
   const handleLoadMore = () => {
     const nextPage = page + 1;
     setPage(nextPage);
-    fetchCoursesFromAPI(nextPage);
+    fetchCombinedCourses(nextPage);
   };
 
-  // Handler for "Check this course" button.
   const handleCheckCourse = (url: string) => {
     if (url) {
       window.open(url, '_blank');
@@ -156,11 +185,7 @@ const SearchCoursePage: React.FC = () => {
       <Content style={{ padding: '24px' }}>
         <Row gutter={[16, 16]}>
           {/* Left side: Filter controls and course list */}
-          <Col xs={24} lg={8} style={{ maxHeight: '80vh', overflowY: 'auto' }}>
-            {/* Badge at the top */}
-            <Tag color="blue" style={{ marginBottom: 16, fontSize: '14px' }}>
-              Data from SkillsFuture SG
-            </Tag>
+          <Col xs={24} lg={8} style={{ maxHeight: '100vh', overflowY: 'auto' }}>
             <Card title="Filter Courses" bordered={false}>
               <Search
                 placeholder="Search by course title"
@@ -176,6 +201,16 @@ const SearchCoursePage: React.FC = () => {
                 onSearch={(value) => setKeyword(value)}
                 style={{ marginBottom: 16 }}
               />
+              <Select
+                placeholder="Filter by Source"
+                style={{ width: '100%', marginBottom: 16 }}
+                allowClear
+                value={selectedSource}
+                onChange={(value) => setSelectedSource(value)}
+              >
+                <Option value="internal">Internal</Option>
+                <Option value="myskillsfuture">SkillsFuture SG</Option>
+              </Select>
               <Select
                 placeholder="Filter by Category"
                 style={{ width: '100%', marginBottom: 16 }}
@@ -231,12 +266,22 @@ const SearchCoursePage: React.FC = () => {
                           <img
                             src={course.tileImageURL}
                             alt={course.title}
-                            style={{ width: '80%', marginBottom: '8px', display: 'block', marginLeft: 'auto', marginRight: 'auto' }}
+                            style={{
+                              width: '80%',
+                              marginBottom: '8px',
+                              display: 'block',
+                              marginLeft: 'auto',
+                              marginRight: 'auto'
+                            }}
                           />
                         )}
                         <Title level={5}>{course.title}</Title>
                         <Paragraph ellipsis={{ rows: 2 }}>{course.content}</Paragraph>
-                        {/* Render modeOfTrainings as tags if available */}
+                        {course.source && (
+                          <Tag color={course.source === 'internal' ? 'green' : 'volcano'} style={{ marginBottom: 8 }}>
+                            {course.source === 'internal' ? 'Internal' : 'SkillsFuture SG'}
+                          </Tag>
+                        )}
                         {course.modeOfTrainings && course.modeOfTrainings.length > 0 && (
                           <div style={{ marginTop: 8 }}>
                             {course.modeOfTrainings.map((mode, idx) => (
@@ -246,7 +291,7 @@ const SearchCoursePage: React.FC = () => {
                             ))}
                           </div>
                         )}
-                        <Button
+                        {/* <Button
                           type="primary"
                           onClick={(e) => {
                             e.stopPropagation();
@@ -255,54 +300,67 @@ const SearchCoursePage: React.FC = () => {
                           style={{ marginTop: 8 }}
                         >
                           Check this course
-                        </Button>
+                        </Button> */}
                       </Card>
                     </List.Item>
                   )}
                 />
-                {hasMore && (
-                  <Button onClick={handleLoadMore} type="primary" style={{ width: '100%', marginTop: 16 }}>
-                    {isLoading ? 'Loading...' : 'Load More'}
-                  </Button>
-                )}
+                {/* Always show clickable Load More text */}
+                <div
+                  onClick={handleLoadMore}
+                  onMouseEnter={() => setHoverLoadMore(true)}
+                  onMouseLeave={() => setHoverLoadMore(false)}
+                  style={{
+                    textAlign: 'center',
+                    padding: '10px 0',
+                    color: hoverLoadMore ? 'lightblue' : 'grey',
+                    cursor: 'pointer',
+                    fontSize: '16px'
+                  }}
+                >
+                  {isLoading ? 'Loading...' : 'Load More'}
+                </div>
               </>
             )}
           </Col>
-          {/* Right side: Course details */}
+          {/* Right side: Course details with tabs */}
           <Col xs={24} lg={16}>
             <Card bordered={false} style={{ minHeight: '80vh', padding: '24px' }}>
               {selectedCourse ? (
                 <>
-                  <Title level={3}>{selectedCourse.title}</Title>
+                  <Title level={2}>{selectedCourse.title}</Title>
                   {selectedCourse.detailImageURL && (
                     <img
-                      src={selectedCourse.detailImageURL.startsWith('/') ? `https://public-api.ssg-wsg.sg${selectedCourse.detailImageURL}` : selectedCourse.detailImageURL}
+                      src={selectedCourse.detailImageURL.startsWith('/')
+                        ? `https://public-api.ssg-wsg.sg${selectedCourse.detailImageURL}`
+                        : selectedCourse.detailImageURL}
                       alt={selectedCourse.title}
-                      style={{ width: '80%', marginBottom: '16px', display: 'block', marginLeft: 'auto', marginRight: 'auto' }}
+                      style={{ width: '100%', marginBottom: '16px' }}
                     />
                   )}
-                  <Paragraph><strong>Description:</strong> {selectedCourse.content}</Paragraph>
-                  {selectedCourse.objective && (
-                    <Paragraph><strong>Objective:</strong> {selectedCourse.objective}</Paragraph>
-                  )}
-                  {selectedCourse.totalCostOfTrainingPerTrainee ? (
-                    <Paragraph><strong>Cost:</strong> ${selectedCourse.totalCostOfTrainingPerTrainee}</Paragraph>
-                  ) : null}
-                  {selectedCourse.totalTrainingDurationHour ? (
-                    <Paragraph>
-                      <strong>Duration:</strong> {selectedCourse.totalTrainingDurationHour} hours
-                    </Paragraph>
-                  ) : null}
-                  {selectedCourse.modeOfTrainings && selectedCourse.modeOfTrainings.length > 0 && (
-                    <div style={{ marginTop: 16 }}>
-                      <Title level={5}>Mode of Training</Title>
-                      {selectedCourse.modeOfTrainings.map((mode, idx) => (
-                        <Tag key={idx} color="geekblue">
-                          {mode.description}
-                        </Tag>
-                      ))}
-                    </div>
-                  )}
+                  <Tabs defaultActiveKey="1">
+                    <TabPane tab="Details" key="1">
+                      <Paragraph><strong>Provider:</strong> {selectedCourse.provider}</Paragraph>
+                      <Paragraph><strong>Cost:</strong> ${selectedCourse.totalCostOfTrainingPerTrainee}</Paragraph>
+                      <Paragraph><strong>Duration:</strong> {selectedCourse.totalTrainingDurationHour} hours</Paragraph>
+                      {selectedCourse.modeOfTrainings && selectedCourse.modeOfTrainings.length > 0 && (
+                        <div style={{ marginTop: 16 }}>
+                          <Title level={5}>Mode of Training</Title>
+                          {selectedCourse.modeOfTrainings.map((mode, idx) => (
+                            <Tag key={idx} color="geekblue">
+                              {mode.description}
+                            </Tag>
+                          ))}
+                        </div>
+                      )}
+                    </TabPane>
+                    <TabPane tab="Description" key="2">
+                      <Paragraph>{selectedCourse.content}</Paragraph>
+                    </TabPane>
+                    <TabPane tab="Objective" key="3">
+                      <Paragraph>{selectedCourse.objective || "No objective provided."}</Paragraph>
+                    </TabPane>
+                  </Tabs>
                 </>
               ) : (
                 <Paragraph type="secondary">
