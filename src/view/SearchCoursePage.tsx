@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Layout, Row, Col, Input, Card, Typography, List, Select, DatePicker, Spin, Button, Tag, Tabs } from 'antd';
+import { Layout, Row, Col, Input, Card, Typography, List, Select, DatePicker, Spin, Button, Tag, Tabs, Empty } from 'antd';
 import moment from 'moment';
 import { showErrorMessage } from '../utils/messageUtils';
 import { useNavigate } from 'react-router-dom';
@@ -183,19 +183,19 @@ const SearchCoursePage: React.FC = () => {
   };
 
   return (
-    <Layout style={{ minHeight: '100vh', background: '#f0f2f5' }}>
+    <Layout style={{ minHeight: '100vh', background: '#f0f2f5', marginLeft: 'auto', marginRight: 'auto' }}>
       <Content style={{ padding: '24px' }}>
-        <Row gutter={[16, 16]}>
+        <Row gutter={[16, 16]} justify="center" align="top">
           {/* Left side: Filter controls and course list */}
-          <Col xs={24} lg={8} style={{ maxHeight: '100vh', overflowY: 'auto' }}>
+          <Col xs={20} lg={5} style={{ maxHeight: '100vh', overflowY: 'auto' }}>
             <Card title="Filter Courses" bordered={false}>
-              <Search
+              {/* <Search
                 placeholder="Search by course title"
                 value={filterText}
                 onChange={(e) => setFilterText(e.target.value)}
                 style={{ marginBottom: 16 }}
                 enterButton
-              />
+              /> */}
               <Search
                 placeholder="Search by keyword"
                 value={inputKeyword}
@@ -325,6 +325,8 @@ const SearchCoursePage: React.FC = () => {
               </>
             )}
           </Col>
+
+
           {/* Right side: Course details with tabs */}
           <Col xs={24} lg={16}>
             <Card bordered={false} style={{ minHeight: '80vh', padding: '24px' }}>
@@ -379,9 +381,19 @@ const SearchCoursePage: React.FC = () => {
                   </Tabs>
                 </>
               ) : (
-                <Paragraph type="secondary">
-                  Please select a course from the list on the left to view its details.
-                </Paragraph>
+                <Row justify="center" align="middle">
+                  <Col xs={20} lg={5} style={{ maxHeight: '100vh'}}>
+                    <Empty
+                      image="https://gw.alipayobjects.com/zos/antfincdn/ZHrcdLPrvN/empty.svg"
+                      description={
+                        <Typography.Text>
+                          Please select a course from the list on the left to view its details.
+                        </Typography.Text>
+                      }
+                    >
+                    </Empty>
+                  </Col>
+                </Row>
               )}
             </Card>
           </Col>
