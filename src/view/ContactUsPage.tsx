@@ -11,24 +11,50 @@ import {
     message
 } from "antd";
 import { UploadOutlined } from "@ant-design/icons";
+import PORT from '../hooks/usePort';
 
 const { Content } = Layout;
 const { Title } = Typography;
 const { Option } = Select;
+interface userSessionObject {
+    id: string,
+    username: string,
+    role: string,
+} 
 
 const ContactUsPage: React.FC = () => {
     const [form] = Form.useForm();
     const [fileList, setFileList] = useState<any[]>([]);
+    const userString = sessionStorage.getItem('user');
+    const user: userSessionObject | null = userString ? JSON.parse(userString) : null;
+    const user_id = user?.id;
 
-    const onFinish = (values: any) => {
-        // Add the screenshot file info to the submitted data if available
-        const feedbackData = { ...values, screenshot: fileList };
-        console.log("Feedback received:", feedbackData);
-        // Replace the log above with your API call to send the feedback.
-        message.success("Feedback submitted successfully!");
-        form.resetFields();
-        setFileList([]);
-    };
+    const onFinish = async (values: any) => {
+        const feedbackData = { ...values, screenshot: fileList, user_id };
+    
+        try {
+            const response = await fetch(`http://localhost:${PORT}/api/contactus`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(feedbackData),
+            });
+    
+            const result = await response.json();
+    
+            if (response.ok) {
+                message.success(result.message);
+                form.resetFields();
+                setFileList([]);
+            } else {
+                message.error(result.error || "Submission failed");
+            }
+        } catch (error) {
+            console.error("Error submitting feedback:", error);
+            message.error("An error occurred while submitting your feedback.");
+        }
+    };    
 
     // Prevent automatic upload; we'll handle the file as a part of the form submission.
     const beforeUpload = (file: any) => {
@@ -125,6 +151,10 @@ const ContactUsPage: React.FC = () => {
                             <Button type="primary" htmlType="submit" block>
                                 Submit Feedback
                             </Button>
+                        </Form.Item>
+
+                        <Form.Item name="user_id" initialValue={user_id} hidden>
+                            <Input />
                         </Form.Item>
                     </Form>
                 </Card>
