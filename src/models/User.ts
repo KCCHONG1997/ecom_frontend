@@ -1,3 +1,5 @@
+import { UserRole } from '../enums/userRole';  
+
 export interface User { // same as UserAccount in DB table
     user_id: number;
     username: string;
@@ -10,12 +12,6 @@ export interface User { // same as UserAccount in DB table
     created_at: Date;
 }
 
-export enum UserRole {
-    ADMIN = 'admin',
-    LEARNER = 'learner',
-    PROVIDER = 'provider',
-}
-
 export class UserAccount implements User {
     private _user_id: number;
     private _username: string;
@@ -23,7 +19,7 @@ export class UserAccount implements User {
     private _password_hash: string;
     private _first_name: string;
     private _last_name: string;
-    private _phone: string;  // New private phone property
+    private _phone: string;  
     private _role: UserRole;
     private _created_at: Date;
 

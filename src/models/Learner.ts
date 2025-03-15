@@ -1,7 +1,7 @@
 // correspond to LearnerProfile in sql
 
 import { UserAccount } from './User'; 
-import { UserRole } from './User';   
+import { UserRole } from '../enums/userRole';   
 
 export class Learner extends UserAccount {
     private _cover_image_url: string;
@@ -17,6 +17,7 @@ export class Learner extends UserAccount {
         password_hash: string,
         first_name: string,
         last_name: string,
+        phone: string,
         role: UserRole,
         created_at: Date,
         cover_image_url: string,
@@ -25,7 +26,7 @@ export class Learner extends UserAccount {
         company_name: string,
         about_myself: string
     ) {
-        super(user_id, username, email, password_hash, first_name, last_name, role, created_at);
+        super(user_id, username, email, password_hash, first_name, last_name, phone, role, created_at);
 
         this._cover_image_url = cover_image_url;
         this._profile_image_url = profile_image_url;

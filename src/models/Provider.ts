@@ -1,7 +1,7 @@
 // corresspond to providerAccount in backend
 
 import { UserAccount } from './User'; // Import the UserAccount class
-import { UserRole } from './User';    // Import UserRole for consistency
+import { UserRole } from '../enums/userRole';    // Import UserRole for consistency
 
 export class Provider extends UserAccount {
     private _lecture_team_id: number | null;
@@ -16,6 +16,7 @@ export class Provider extends UserAccount {
         password_hash: string,
         first_name: string,
         last_name: string,
+        phone: string,
         role: UserRole,
         created_at: Date,
         lecture_team_id: number | null,
@@ -24,7 +25,7 @@ export class Provider extends UserAccount {
         address: string
     ) {
         // Call the parent constructor to initialize the UserAccount part
-        super(user_id, username, email, password_hash, first_name, last_name, role, created_at);
+        super(user_id, username, email, password_hash, first_name, last_name, phone, role, created_at);
 
         // Initialize new properties specific to Provider
         this._lecture_team_id = lecture_team_id;
