@@ -2,7 +2,6 @@ import { Menu, MenuProps, Dropdown, Avatar, Spin } from 'antd';
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Row, Col } from 'antd';
-import { useSession } from '../../hooks/useSession'; // Custom hook for session management
 
 export interface NavConfig {
   navBarTheme: 'light' | 'dark';
@@ -11,32 +10,67 @@ export interface NavConfig {
   rightNavItems?: MenuProps['items'];
 }
 
+interface User {
+  id: string;
+  username: string;
+  avatar?: string;
+  // Add any additional fields if needed
+}
+
 const NavBar: React.FC<NavConfig> = (config) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, isLoading, fetchSession, logout } = useSession(); // Using the custom session hook
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoggingOut, setIsLoggingOut] = useState<boolean>(false);
 
-  // Fetch session whenever the route changes
+  // Fetch user session from sessionStorage on mount and when the route changes
   useEffect(() => {
-    fetchSession();
+    const storedUser = sessionStorage.getItem('user');
+    if (storedUser) {
+      try {
+        const parsedUser: User = JSON.parse(storedUser);
+        setUser(parsedUser);
+        console.log("Parsed user from sessionStorage:", parsedUser);
+      } catch (error) {
+        console.error('Error parsing sessionStorage user:', error);
+        setUser(null);
+      }
+    } else {
+      setUser(null);
+    }
+    setIsLoading(false);
   }, [location.pathname]);
 
   const handleLogout = async () => {
-    setIsLoggingOut(true); // Show spinner during logout
+    setIsLoggingOut(true);
     try {
-      await logout(); // Call the logout method from the hook
-      navigate('/login'); // Redirect to login page
+      sessionStorage.removeItem('user');
+      navigate('/login');
     } catch (error) {
       console.error('Error logging out:', error);
     } finally {
-      setIsLoggingOut(false); // Stop spinner
+      setIsLoggingOut(false);
     }
   };
 
+  // Menu items with Profile redirect based on userID from sessionStorage.
   const menuItems: MenuProps['items'] = [
-    { key: 'profile', label: 'Profile' },
-    { key: 'logout', label: 'Logout', onClick: handleLogout },
+    {
+      key: 'profile',
+      label: 'Profile',
+      onClick: () => {
+        console.log("Profile clicked");
+        if (user && user.id) {
+          navigate(`/learnerProfile/${user.id}`);
+        }
+      },
+    },
+    {
+      key: 'logout',
+      label: 'Logout',
+      onClick: handleLogout,
+    },
   ];
 
   return (
@@ -57,11 +91,20 @@ const NavBar: React.FC<NavConfig> = (config) => {
         <Col span={4} offset={7}>
           {user ? (
             <Dropdown menu={{ items: menuItems }} placement="bottomRight">
-              <div style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', color: 'whitesmoke' }}>
+              <div
+                style={{
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  color: 'whitesmoke',
+                }}
+              >
                 {user.avatar ? (
                   <Avatar src={user.avatar} style={{ marginRight: 8 }} />
                 ) : (
-                  <Avatar style={{ marginRight: 8 }}>{user.username[0]}</Avatar>
+                  <Avatar style={{ marginRight: 8 }}>
+                    {user.username[0].toUpperCase()}
+                  </Avatar>
                 )}
                 {user.username}
               </div>
