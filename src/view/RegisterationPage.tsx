@@ -1,104 +1,122 @@
 import React, { useState } from 'react';
-import { Button, Form, Input, Row, Col, message, Tabs } from 'antd';
+import { Button, Form, Input, Row, Col, Tabs, Spin } from 'antd';
 import { SearchOutlined } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
 import PORT from '../hooks/usePort';
-import { Learner } from '../../models/Learner'
+import { showSuccessMessage, showErrorMessage } from '../utils/messageUtils';
 
 const { TabPane } = Tabs;
 
 const RegistrationPage: React.FC = () => {
-  
-  const onFinishLearner = async (values: Learner) => {
-    console.log('Learner Registration Success:', values);
-    try{
+  const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false);
+
+  const autoLogin = async (username: string, password: string) => {
+    try {
       const response = await fetch(`http://localhost:${PORT}/api/login`, {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        credentials: 'include', 
-        body: JSON.stringify({
-            username: values.username,
-            password: values.password_hash,
-        }),
-    });
-    } catch{
-
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ username, password }),
+      });
+      const jsonData = await response.json();
+      if (!response.ok) {
+        showErrorMessage(`Login Failed: ${jsonData.error || 'Unknown error'}`);
+        return;
+      }
+      sessionStorage.setItem('user', JSON.stringify(jsonData.user));
+      showSuccessMessage('Successfully logged in!');
+      navigate('/');
+      window.location.reload();
+    } catch (error) {
+      showErrorMessage('Failed to connect to the server during auto-login.');
+      console.error('Auto-login error:', error);
     }
-    message.success('Learner Registration Successful!');
+  };
+
+  const onFinishLearner = async (values: any) => {
+    console.log('Learner Registration Success:', values);
+    setIsLoading(true);
+    try {
+      const response = await fetch(`http://localhost:${PORT}/api/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          username: values.username,
+          email: values.email,
+          password: values.password,
+          role: 'learner',
+          phone_number: values.phoneNumber,
+          cover_image_url: '',
+          profile_image_url: '',
+          occupation: '',
+          company_name: '',
+          about_myself: ''
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        showErrorMessage(data.error || 'Registration failed.');
+        return;
+      }
+      showSuccessMessage('Registration successful, logging you in...');
+      await autoLogin(values.username, values.password);
+    } catch (error) {
+      showErrorMessage('Registration failed due to network error.');
+      console.error('Error during registration:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const onFinishFailedLearner = (errorInfo: object) => {
     console.error('Learner Registration Failed:', errorInfo);
-    message.error('Please check your learner registration input!');
+    showErrorMessage('Please check your learner registration input!');
   };
 
-  // Simulated API call to search organization by ID
-  const fetchOrganizationById = (orgId: string): Promise<{ name: string; website: string } | null> => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        // Simulate a found organization for a specific ID (e.g., "ORG123")
-        if (orgId === 'ORG123') {
-          resolve({ name: 'Example Organization', website: 'https://example.org' });
-        } else {
-          resolve(null);
-        }
-      }, 1500);
-    });
-  };
-
-  // Provider Registration Form Component
-  const ProviderForm = () => {
-    const [form] = Form.useForm();
-    const [searching, setSearching] = useState(false);
-
-    // Handler for Provider registration form submission
-    const onFinishProvider = (values: object) => {
-      console.log('Provider Registration Success:', values);
-      message.success('Provider Registration Successful!');
-    };
-
-    const onFinishFailedProvider = (errorInfo: object) => {
-      console.error('Provider Registration Failed:', errorInfo);
-      message.error('Please check your provider registration input!');
-    };
-
-    // Handler to search for organization by ID
-    const handleSearchOrg = async () => {
-      try {
-        const orgId = form.getFieldValue('organizationID');
-        if (!orgId) {
-          message.error('Please enter an Organization ID to search.');
-          return;
-        }
-        setSearching(true);
-        const orgData = await fetchOrganizationById(orgId);
-        if (orgData) {
-          // Autofill the organization-related fields
-          form.setFieldsValue({
-            organization: orgData.name,
-            website: orgData.website,
-          });
-          message.success('Organization data found and autofilled!');
-        } else {
-          message.error('Organization ID not found.');
-          // Optionally clear the fields if not found
-          form.setFieldsValue({
-            organization: '',
-            website: '',
-          });
-        }
-      } catch (error) {
-        console.error('Error fetching organization:', error);
-        message.error('Error searching for organization.');
-      } finally {
-        setSearching(false);
+  const onFinishProvider = async (values: any) => {
+    console.log('Provider Registration Success:', values);
+    setIsLoading(true);
+    try {
+      const response = await fetch(`http://localhost:${PORT}/api/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          username: values.username,
+          email: values.email,
+          password: values.password,
+          role: 'provider',
+          phone_number: values.phoneNumber,
+          lecture_team_id: values.lectureTeamID,
+          organization_name: values.organization,
+          address: ''
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        showErrorMessage(data.error || 'Registration failed.');
+        return;
       }
-    };
+      showSuccessMessage('Registration successful, logging you in...');
+      await autoLogin(values.username, values.password);
+    } catch (error) {
+      showErrorMessage('Registration failed due to network error.');
+      console.error('Error during provider registration:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
+  const onFinishFailedProvider = (errorInfo: object) => {
+    console.error('Provider Registration Failed:', errorInfo);
+    showErrorMessage('Please check your provider registration input!');
+  };
+
+  const ProviderForm = () => {
     return (
       <Form
-        form={form}
         name="provider_registration_form"
         layout="vertical"
         onFinish={onFinishProvider}
@@ -125,7 +143,13 @@ const RegistrationPage: React.FC = () => {
             </Form.Item>
           </Col>
         </Row>
-
+        <Form.Item
+          name="username"
+          label="Username"
+          rules={[{ required: true, message: 'Username is required!' }]}
+        >
+          <Input placeholder="Enter a username" />
+        </Form.Item>
         <Form.Item
           name="email"
           label="Email"
@@ -136,25 +160,19 @@ const RegistrationPage: React.FC = () => {
         >
           <Input placeholder="Enter your email" />
         </Form.Item>
-
-        {/* Organization ID with a Search Button */}
         <Form.Item label="LectureTeam ID" name="lectureTeamID">
           <Input
             placeholder="Enter your LectureTeam ID"
-            addonAfter={
-              <Button onClick={handleSearchOrg} loading={searching} icon={<SearchOutlined />} />
-            }
+            addonAfter={<Button icon={<SearchOutlined />} />}
           />
         </Form.Item>
-
         <Form.Item
           name="organization"
           label="Organization Name"
           rules={[{ required: true, message: 'Organization name is required!' }]}
         >
-          <Input placeholder="Organization name will be autofilled if ID is found" />
+          <Input placeholder="Organization name" />
         </Form.Item>
-
         <Form.Item
           name="phoneNumber"
           label="Phone Number"
@@ -165,7 +183,6 @@ const RegistrationPage: React.FC = () => {
         >
           <Input placeholder="Enter your phone number" />
         </Form.Item>
-
         <Form.Item
           name="password"
           label="Password"
@@ -173,7 +190,6 @@ const RegistrationPage: React.FC = () => {
         >
           <Input.Password placeholder="Enter your password" />
         </Form.Item>
-
         <Form.Item
           name="confirmPassword"
           label="Confirm Password"
@@ -192,7 +208,6 @@ const RegistrationPage: React.FC = () => {
         >
           <Input.Password placeholder="Confirm your password" />
         </Form.Item>
-
         <Form.Item>
           <Button type="primary" htmlType="submit" block>
             Register as Provider
@@ -202,7 +217,6 @@ const RegistrationPage: React.FC = () => {
     );
   };
 
-  // Learner Registration Form Component (unchanged)
   const LearnerForm = () => (
     <Form
       name="learner_registration_form"
@@ -211,6 +225,13 @@ const RegistrationPage: React.FC = () => {
       onFinishFailed={onFinishFailedLearner}
       style={{ maxWidth: '500px', width: '100%' }}
     >
+      <Form.Item
+        name="username"
+        label="Username"
+        rules={[{ required: true, message: 'Username is required!' }]}
+      >
+        <Input placeholder="Enter a username" />
+      </Form.Item>
       <Row gutter={16}>
         <Col span={12}>
           <Form.Item
@@ -231,7 +252,6 @@ const RegistrationPage: React.FC = () => {
           </Form.Item>
         </Col>
       </Row>
-
       <Form.Item
         name="email"
         label="Email"
@@ -242,7 +262,6 @@ const RegistrationPage: React.FC = () => {
       >
         <Input placeholder="Enter your email" />
       </Form.Item>
-
       <Form.Item
         name="phoneNumber"
         label="Phone Number"
@@ -253,7 +272,6 @@ const RegistrationPage: React.FC = () => {
       >
         <Input placeholder="Enter your phone number" />
       </Form.Item>
-
       <Form.Item
         name="password"
         label="Password"
@@ -261,7 +279,6 @@ const RegistrationPage: React.FC = () => {
       >
         <Input.Password placeholder="Enter your password" />
       </Form.Item>
-
       <Form.Item
         name="confirmPassword"
         label="Confirm Password"
@@ -280,7 +297,6 @@ const RegistrationPage: React.FC = () => {
       >
         <Input.Password placeholder="Confirm your password" />
       </Form.Item>
-
       <Form.Item>
         <Button type="primary" htmlType="submit" block>
           Register as Learner
@@ -290,27 +306,29 @@ const RegistrationPage: React.FC = () => {
   );
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        minHeight: '100vh',
-        background: '#f0f2f5',
-        padding: '20px',
-      }}
-    >
-      <div style={{ width: '100%', maxWidth: '600px' }}>
-        <Tabs defaultActiveKey="learner" centered>
-          <TabPane tab="Learner" key="learner">
-            <LearnerForm />
-          </TabPane>
-          <TabPane tab="Provider" key="provider">
-            <ProviderForm />
-          </TabPane>
-        </Tabs>
+    <Spin spinning={isLoading} size="large">
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          minHeight: '100vh',
+          background: '#f0f2f5',
+          padding: '20px',
+        }}
+      >
+        <div style={{ width: '100%', maxWidth: '600px' }}>
+          <Tabs defaultActiveKey="learner" centered>
+            <TabPane tab="Learner" key="learner">
+              <LearnerForm />
+            </TabPane>
+            <TabPane tab="Provider" key="provider">
+              <ProviderForm />
+            </TabPane>
+          </Tabs>
+        </div>
       </div>
-    </div>
+    </Spin>
   );
 };
 

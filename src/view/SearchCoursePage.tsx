@@ -1,25 +1,35 @@
-import React, { useState, useMemo } from 'react';
-import { Layout, Row, Col, Input, Card, Typography, List, Select, DatePicker, Button, Rate, Modal, message } from 'antd';
+import React, { useState, useMemo, useEffect } from 'react';
+import { Layout, Row, Col, Input, Card, Typography, List, Select, DatePicker, Spin, Button, Tag, Tabs, Empty, Rate, Modal, message } from 'antd';
 import { ShoppingCartOutlined, StarOutlined, CheckCircleOutlined } from '@ant-design/icons';
-import moment, { Moment } from 'moment';
+import moment from 'moment';
+import { showErrorMessage } from '../utils/messageUtils';
 import { useNavigate } from 'react-router-dom';
 
 const { Content } = Layout;
 const { Title, Paragraph, Text } = Typography;
 const { Search } = Input;
 const { Option } = Select;
+const { TabPane } = Tabs;
 
-type Course = {
-  id: string;
+export type Course = {
+  externalReferenceNumber: string;
   title: string;
-  description: string;
-  instructor: string;
-  duration: string;
-  category: string;
-  provider: string;
-  // Published date in "YYYY-MM-DD" format
-  date: string;
-  price: number;
+  description?: string;
+  content?: string;
+  instructor?: string;
+  duration?: string;
+  category?: string;
+  provider?: string;
+  date?: string;
+  price?: number;
+  objective?: string;
+  totalCostOfTrainingPerTrainee?: number;
+  totalTrainingDurationHour?: number;
+  tileImageURL?: string;
+  detailImageURL?: string;
+  url?: string;
+  modeOfTrainings?: { code: string; description: string }[];
+  source?: string; // "internal" or "myskillsfuture"
   reviews?: Review[];
 };
 
@@ -32,116 +42,167 @@ type Review = {
   date: string;
 };
 
-const coursesData: Course[] = [
-  {
-    id: '1',
-    title: 'Introduction to React',
-    description: 'Learn the basics of React including components, state, and props.',
-    instructor: 'John Doe',
-    duration: '4 weeks',
-    category: 'Web Development',
-    provider: 'Udemy',
-    date: '2023-05-01',
-    price: 49.99,
-    reviews: [
-      {
-        reviewId: 'r1',
-        userId: 'user1',
-        userName: 'Sarah Johnson',
-        rating: 4,
-        comment: 'Great introduction to React! Very clear explanations.',
-        date: '2023-06-15'
-      },
-      {
-        reviewId: 'r2',
-        userId: 'user2',
-        userName: 'Michael Chen',
-        rating: 5,
-        comment: 'Excellent course for beginners. Highly recommended!',
-        date: '2023-07-02'
-      }
-    ]
-  },
-  {
-    id: '2',
-    title: 'Advanced TypeScript',
-    description: 'Deep dive into advanced TypeScript concepts and best practices.',
-    instructor: 'Jane Smith',
-    duration: '6 weeks',
-    category: 'Programming',
-    provider: 'Coursera',
-    date: '2023-06-15',
-    price: 79.99,
-    reviews: []
-  },
-  {
-    id: '3',
-    title: 'UI/UX Design Fundamentals',
-    description: 'Learn design principles, prototyping, and user research.',
-    instructor: 'Alex Johnson',
-    duration: '5 weeks',
-    category: 'Design',
-    provider: 'edX',
-    date: '2023-07-10',
-    price: 59.99,
-    reviews: []
-  },
-  {
-    id: '4',
-    title: 'Full-Stack Web Development',
-    description: 'Master both frontend and backend technologies in this comprehensive course.',
-    instructor: 'Emily Davis',
-    duration: '10 weeks',
-    category: 'Web Development',
-    provider: 'Udemy',
-    date: '2023-05-20',
-    price: 99.99,
-    reviews: []
-  },
-  {
-    id: '5',
-    title: 'Introduction to Python',
-    description: 'Learn the fundamentals of Python programming language in this beginner-friendly course.',
-    instructor: 'David Wilson',
-    duration: '3 weeks',
-    category: 'Programming',
-    provider: 'Codecademy',
-    date: '2023-08-05',
-    price: 0,
-    reviews: []
-  },
-  // Add more courses as needed
-];
-
 const SearchCoursePage: React.FC = () => {
-  // Filter states
-  const [filterText, setFilterText] = useState<string>('');
-  const [selectedCategory, setSelectedCategory] = useState<string | undefined>(undefined);
-  const [selectedProvider, setSelectedProvider] = useState<string | undefined>(undefined);
-  const [selectedDate, setSelectedDate] = useState<Moment | null>(null);
+  const navigate = useNavigate();
+  const [coursesData, setCoursesData] = useState<Course[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [reviewModalVisible, setReviewModalVisible] = useState(false);
   const [userRating, setUserRating] = useState(0);
   const [reviewComment, setReviewComment] = useState('');
-  
-  const navigate = useNavigate();
 
-  // Compute unique categories and providers for the filter dropdowns
-  const categories = Array.from(new Set(coursesData.map(course => course.category)));
-  const providers = Array.from(new Set(coursesData.map(course => course.provider)));
+  const [filterText, setFilterText] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string | undefined>(undefined);
+  const [selectedProvider, setSelectedProvider] = useState<string | undefined>(undefined);
+  const [selectedDate, setSelectedDate] = useState<moment.Moment | null>(null);
+  const [selectedSource, setSelectedSource] = useState<string | undefined>(undefined);
 
-  // Filter courses based on the provided filters
+  const [inputKeyword, setInputKeyword] = useState<string>('business');
+  const [keyword, setKeyword] = useState<string>('business');
+
+  const [page, setPage] = useState<number>(1);
+  // const pageSize = 15;
+
+  const [hoverLoadMore, setHoverLoadMore] = useState<boolean>(false);
+
+  // Combined fetch: fetch internal courses (only on page 1) and external courses per page.
+  const fetchCombinedCourses = async (pageToLoad: number) => {
+    setIsLoading(true);
+    try {
+      const internalCoursesPromise =
+        pageToLoad === 1
+          ? fetch(`http://localhost:5000/api/getAllCourses?keyword=${encodeURIComponent(keyword)}`, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include'
+          }).then(res => res.json())
+          : Promise.resolve({ data: [] });
+      const externalCoursesPromise = fetch(
+        `http://localhost:5000/api/skillsfuture/courses?keyword=${encodeURIComponent(keyword)}&page=${pageToLoad}`,
+        {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include'
+        }
+      ).then(res => res.json());
+
+      const internalData = await internalCoursesPromise;
+      const externalData = await externalCoursesPromise;
+
+      console.log("externalData: ", externalData);
+
+      const internalCourses: Course[] = (internalData.data || []).map((course: any) => ({
+        externalReferenceNumber: course.external_reference_number,
+        title: course.name,
+        content: course.description,
+        description: course.description,
+        category: course.category || '',
+        provider: course.training_provider_alias || '',
+        date: course.created_at ? course.created_at.split('T')[0] : '',
+        objective: '',
+        totalCostOfTrainingPerTrainee: course.total_cost || 0,
+        price: course.total_cost || 0,
+        totalTrainingDurationHour: course.total_training_hours || 0,
+        duration: `${course.total_training_hours || 0} hours`,
+        tileImageURL: course.tile_image_url || '',
+        detailImageURL: '',
+        url: course.url || '',
+        modeOfTrainings: [],
+        source: 'internal',
+        reviews: []
+      }));
+
+      const externalCourses: Course[] = (externalData.data.courses || []).map((course: any) => ({
+        externalReferenceNumber: course.externalReferenceNumber,
+        title: course.title,
+        content: course.content,
+        description: course.content,
+        category: course.category || '',
+        provider: course.trainingProviderAlias || '',
+        date: course.meta?.createDate ? course.meta.createDate.split('T')[0] : '',
+        objective: course.objective || '',
+        totalCostOfTrainingPerTrainee: course.totalCostOfTrainingPerTrainee || 0,
+        price: course.totalCostOfTrainingPerTrainee || 0,
+        totalTrainingDurationHour: course.totalTrainingDurationHour || 0,
+        duration: `${course.totalTrainingDurationHour || 0} hours`,
+        tileImageURL: course.tileImageURL
+          ? (course.tileImageURL.startsWith('/') ? `https://www.myskillsfuture.gov.sg${course.tileImageURL}` : course.tileImageURL)
+          : '',
+        detailImageURL: course.detailImageURL
+          ? (course.detailImageURL.startsWith('/') ? `https://www.myskillsfuture.gov.sg${course.detailImageURL}` : course.detailImageURL)
+          : '',
+        url: course.url || '',
+        modeOfTrainings: course.modeOfTrainings || [],
+        source: course.source || 'myskillsfuture',
+        reviews: []
+      }));
+
+      const combinedCourses = [...internalCourses, ...externalCourses];
+
+      if (pageToLoad === 1) {
+        setCoursesData(combinedCourses);
+      } else {
+        setCoursesData(prev => {
+          const newCourses = combinedCourses.filter(
+            course => !prev.some(c => c.externalReferenceNumber === course.externalReferenceNumber)
+          );
+          return [...prev, ...newCourses];
+        });
+      }
+    } catch (error) {
+      showErrorMessage('Failed to connect to the server.');
+      console.error('Error:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    setPage(1);
+    fetchCombinedCourses(1);
+  }, [keyword]);
+
+  const allCourses = useMemo(() => coursesData, [coursesData]);
+  const categories = useMemo(
+    () => Array.from(new Set(allCourses.map(course => course.category).filter(Boolean))),
+    [allCourses]
+  );
+  const providers = useMemo(
+    () => Array.from(new Set(allCourses.map(course => course.provider).filter(Boolean))),
+    [allCourses]
+  );
+
   const filteredCourses = useMemo(() => {
-    return coursesData.filter((course) => {
-      const matchesText = course.title.toLowerCase().includes(filterText.toLowerCase());
-      const matchesCategory = selectedCategory ? course.category === selectedCategory : true;
-      const matchesProvider = selectedProvider ? course.provider === selectedProvider : true;
-      const matchesDate = selectedDate 
-        ? course.date === selectedDate.format('YYYY-MM-DD')
-        : true;
-      return matchesText && matchesCategory && matchesProvider && matchesDate;
+    return allCourses.filter(course => {
+      if (selectedSource) {
+        return course.source === selectedSource &&
+          course.title.toLowerCase().includes(filterText.toLowerCase()) &&
+          (selectedCategory ? course.category === selectedCategory : true) &&
+          (selectedProvider ? course.provider === selectedProvider : true) &&
+          (selectedDate ? course.date === selectedDate.format('YYYY-MM-DD') : true);
+      } else {
+        if (course.source === 'internal') return true;
+        return course.title.toLowerCase().includes(filterText.toLowerCase()) &&
+          (selectedCategory ? course.category === selectedCategory : true) &&
+          (selectedProvider ? course.provider === selectedProvider : true) &&
+          (selectedDate ? course.date === selectedDate.format('YYYY-MM-DD') : true);
+      }
     });
-  }, [filterText, selectedCategory, selectedProvider, selectedDate]);
+  }, [allCourses, filterText, selectedCategory, selectedProvider, selectedDate, selectedSource]);
+
+  const handleLoadMore = () => {
+    const nextPage = page + 1;
+    setPage(nextPage);
+    fetchCombinedCourses(nextPage);
+  };
+
+  const handleCheckCourse = (url: string) => {
+    if (url) {
+      window.open(url, '_blank');
+    } else {
+      showErrorMessage("No course URL available");
+    }
+  };
 
   const handleEnroll = (course: Course) => {
     localStorage.setItem('selectedCourse', JSON.stringify(course));
@@ -166,7 +227,7 @@ const SearchCoursePage: React.FC = () => {
     };
 
     const updatedCourses = coursesData.map(course => {
-      if (course.id === selectedCourse.id) {
+      if (course.externalReferenceNumber === selectedCourse.externalReferenceNumber) {
         return {
           ...course,
           reviews: [...(course.reviews || []), newReview]
@@ -175,7 +236,9 @@ const SearchCoursePage: React.FC = () => {
       return course;
     });
 
-    const updatedCourse = updatedCourses.find(c => c.id === selectedCourse.id);
+    setCoursesData(updatedCourses);
+    
+    const updatedCourse = updatedCourses.find(c => c.externalReferenceNumber === selectedCourse.externalReferenceNumber);
     if (updatedCourse) {
       setSelectedCourse(updatedCourse);
     }
@@ -195,45 +258,52 @@ const SearchCoursePage: React.FC = () => {
   };
 
   return (
-    <Layout style={{ minHeight: '100vh', background: '#f0f2f5' }}>
+    <Layout style={{ minHeight: '100vh', background: '#f0f2f5', marginLeft: 'auto', marginRight: 'auto' }}>
       <Content style={{ padding: '24px' }}>
-        <Row gutter={24}>
-          <Col xs={24} lg={8} style={{ maxHeight: '80vh', overflowY: 'auto' }}>
-            <Card
-              style={{ marginBottom: '16px' }}
-              title="Filter Courses"
-              bordered={false}
-            >
+        <Row gutter={[16, 16]} justify="center" align="top">
+          {/* Left side: Filter controls and course list */}
+          <Col xs={20} lg={5} style={{ maxHeight: '100vh', overflowY: 'auto' }}>
+            <Card title="Filter Courses" bordered={false}>
               <Search
-                placeholder="Search by course title"
-                value={filterText}
-                onChange={(e) => setFilterText(e.target.value)}
-                style={{ marginBottom: '16px' }}
-                enterButton
+                placeholder="Search by keyword"
+                value={inputKeyword}
+                onChange={(e) => setInputKeyword(e.target.value)}
+                onSearch={(value) => setKeyword(value)}
+                style={{ marginBottom: 16 }}
               />
               <Select
+                placeholder="Filter by Source"
+                style={{ width: '100%', marginBottom: 16 }}
+                allowClear
+                value={selectedSource}
+                onChange={(value) => setSelectedSource(value)}
+              >
+                <Option value="internal">Internal</Option>
+                <Option value="myskillsfuture">SkillsFuture SG</Option>
+              </Select>
+              <Select
                 placeholder="Filter by Category"
-                style={{ width: '100%', marginBottom: '16px' }}
+                style={{ width: '100%', marginBottom: 16 }}
                 allowClear
                 value={selectedCategory}
                 onChange={(value) => setSelectedCategory(value)}
               >
-                {categories.map((category) => (
-                  <Option key={category} value={category}>
-                    {category}
+                {categories.map((cat) => (
+                  <Option key={cat} value={cat}>
+                    {cat}
                   </Option>
                 ))}
               </Select>
               <Select
                 placeholder="Filter by Provider"
-                style={{ width: '100%', marginBottom: '16px' }}
+                style={{ width: '100%', marginBottom: 16 }}
                 allowClear
                 value={selectedProvider}
                 onChange={(value) => setSelectedProvider(value)}
               >
-                {providers.map((provider) => (
-                  <Option key={provider} value={provider}>
-                    {provider}
+                {providers.map((prov) => (
+                  <Option key={prov} value={prov}>
+                    {prov}
                   </Option>
                 ))}
               </Select>
@@ -245,121 +315,226 @@ const SearchCoursePage: React.FC = () => {
                 format="YYYY-MM-DD"
               />
             </Card>
-            <List
-              itemLayout="vertical"
-              dataSource={filteredCourses}
-              renderItem={(course) => (
-                <List.Item key={course.id}>
-                  <Card
-                    hoverable
-                    onClick={() => setSelectedCourse(course)}
-                    style={{
-                      marginBottom: '12px',
-                      border: selectedCourse?.id === course.id ? '2px solid #1890ff' : '',
-                    }}
-                  >
-                    <Title level={5}>{course.title}</Title>
-                    <Paragraph ellipsis={{ rows: 2 }}>{course.description}</Paragraph>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <Text type="secondary">{course.provider}</Text>
-                      <Text strong>{course.price === 0 ? 'Free' : `$${course.price}`}</Text>
-                    </div>
-                    <div>
-                      <Rate disabled defaultValue={getAverageRating(course)} />
-                      <Text type="secondary"> ({course.reviews?.length || 0} reviews)</Text>
-                    </div>
-                  </Card>
-                </List.Item>
-              )}
-            />
+            {isLoading && page === 1 ? (
+              <Spin style={{ display: 'block', marginTop: 20 }} />
+            ) : (
+              <>
+                <List
+                  itemLayout="vertical"
+                  dataSource={filteredCourses}
+                  renderItem={(course) => (
+                    <List.Item key={course.externalReferenceNumber}>
+                      <Card
+                        hoverable
+                        onClick={() => setSelectedCourse(course)}
+                        style={{
+                          marginBottom: 12,
+                          border: selectedCourse?.externalReferenceNumber === course.externalReferenceNumber ? '2px solid #1890ff' : undefined,
+                        }}
+                      >
+                        {course.tileImageURL && (
+                          <img
+                            src={course.tileImageURL}
+                            alt={course.title}
+                            style={{
+                              width: '80%',
+                              marginBottom: '8px',
+                              display: 'block',
+                              marginLeft: 'auto',
+                              marginRight: 'auto'
+                            }}
+                          />
+                        )}
+                        <Title level={5}>{course.title}</Title>
+                        <Paragraph ellipsis={{ rows: 2 }}>{course.content || course.description}</Paragraph>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <Text type="secondary">{course.provider}</Text>
+                          <Text strong>{(course.price === 0 || course.totalCostOfTrainingPerTrainee === 0) ? 'Free' : `$${course.price || course.totalCostOfTrainingPerTrainee}`}</Text>
+                        </div>
+                        {course.reviews && course.reviews.length > 0 && (
+                          <div>
+                            <Rate disabled defaultValue={getAverageRating(course)} />
+                            <Text type="secondary"> ({course.reviews?.length || 0} reviews)</Text>
+                          </div>
+                        )}
+                        {course.source && (
+                          <Tag color={course.source === 'internal' ? 'green' : 'volcano'} style={{ marginBottom: 8, marginTop: 8 }}>
+                            {course.source === 'internal' ? 'Internal' : 'SkillsFuture SG'}
+                          </Tag>
+                        )}
+                        {course.modeOfTrainings && course.modeOfTrainings.length > 0 && (
+                          <div style={{ marginTop: 8 }}>
+                            {course.modeOfTrainings.map((mode, idx) => (
+                              <Tag key={idx} color="geekblue">
+                                {mode.description}
+                              </Tag>
+                            ))}
+                          </div>
+                        )}
+                      </Card>
+                    </List.Item>
+                  )}
+                />
+                {/* Always show clickable Load More text */}
+                <div
+                  onClick={handleLoadMore}
+                  onMouseEnter={() => setHoverLoadMore(true)}
+                  onMouseLeave={() => setHoverLoadMore(false)}
+                  style={{
+                    textAlign: 'center',
+                    padding: '10px 0',
+                    color: hoverLoadMore ? 'lightblue' : 'grey',
+                    cursor: 'pointer',
+                    fontSize: '16px'
+                  }}
+                >
+                  {isLoading ? 'Loading...' : 'Load More'}
+                </div>
+              </>
+            )}
           </Col>
 
+          {/* Right side: Course details with tabs */}
           <Col xs={24} lg={16}>
             <Card bordered={false} style={{ minHeight: '80vh', padding: '24px' }}>
               {selectedCourse ? (
                 <>
-                  <Title level={3}>{selectedCourse.title}</Title>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
-                    <div>
-                      <Rate disabled value={getAverageRating(selectedCourse)} />
-                      <Text style={{ marginLeft: '8px' }}>
-                        ({selectedCourse.reviews?.length || 0} reviews)
-                      </Text>
-                    </div>
-                    <Title level={4}>{selectedCourse.price === 0 ? 'Free' : `$${selectedCourse.price}`}</Title>
+                  <Title level={2}>{selectedCourse.title}</Title>
+                  
+                  {/* Price display */}
+                  <Title level={4}>
+                    {(selectedCourse.price === 0 || selectedCourse.totalCostOfTrainingPerTrainee === 0) 
+                      ? 'Free' 
+                      : `$${selectedCourse.price || selectedCourse.totalCostOfTrainingPerTrainee}`}
+                  </Title>
+                  
+                  {/* SkillsFuture button for external courses */}
+                  {selectedCourse.source === 'myskillsfuture' && (
+                    <Button
+                      type="primary"
+                      ghost
+                      onClick={() =>
+                        window.open(
+                          `https://www.myskillsfuture.gov.sg/content/portal/en/training-exchange/course-directory/course-detail.html?courseReferenceNumber=${selectedCourse.externalReferenceNumber}`,
+                          '_blank'
+                        )
+                      }
+                      style={{ marginTop: 15, marginBottom: 15 }}
+                    >
+                      View on SkillsFuture SG
+                    </Button>
+                  )}
+                  
+                  {/* Course image */}
+                  {selectedCourse.detailImageURL && (
+                    <img
+                      src={selectedCourse.detailImageURL}
+                      alt={selectedCourse.title}
+                      style={{ width: '100%', marginBottom: '16px' }}
+                    />
+                  )}
+                  
+                  {/* Rating display */}
+                  <div style={{ display: 'flex', marginBottom: '16px' }}>
+                    <Rate disabled value={getAverageRating(selectedCourse)} />
+                    <Text style={{ marginLeft: '8px' }}>
+                      ({selectedCourse.reviews?.length || 0} reviews)
+                    </Text>
                   </div>
                   
-                  <Paragraph>{selectedCourse.description}</Paragraph>
+                  {/* Tabs for course details */}
+                  <Tabs defaultActiveKey="1">
+                    <TabPane tab="Details" key="1">
+                      <Paragraph><strong>Provider:</strong> {selectedCourse.provider}</Paragraph>
+                      <Paragraph><strong>Cost:</strong> {(selectedCourse.price === 0 || selectedCourse.totalCostOfTrainingPerTrainee === 0) 
+                          ? 'Free' 
+                          : `$${selectedCourse.price || selectedCourse.totalCostOfTrainingPerTrainee}`}</Paragraph>
+                      <Paragraph><strong>Duration:</strong> {selectedCourse.duration || `${selectedCourse.totalTrainingDurationHour} hours`}</Paragraph>
+                      {selectedCourse.modeOfTrainings && selectedCourse.modeOfTrainings.length > 0 && (
+                        <div style={{ marginTop: 16 }}>
+                          <Title level={5}>Mode of Training</Title>
+                          {selectedCourse.modeOfTrainings.map((mode, idx) => (
+                            <Tag key={idx} color="geekblue">
+                              {mode.description}
+                            </Tag>
+                          ))}
+                        </div>
+                      )}
+                    </TabPane>
+                    <TabPane tab="Description" key="2">
+                      <Paragraph>{selectedCourse.content || selectedCourse.description}</Paragraph>
+                    </TabPane>
+                    <TabPane tab="Objective" key="3">
+                      <Paragraph>{selectedCourse.objective || "No objective provided."}</Paragraph>
+                    </TabPane>
+                    <TabPane tab="Reviews" key="4">
+                      {/* Reviews section */}
+                      <Button 
+                        style={{ marginBottom: '16px' }}
+                        icon={<StarOutlined />}
+                        onClick={() => setReviewModalVisible(true)}
+                      >
+                        Write a Review
+                      </Button>
+                      
+                      {selectedCourse.reviews && selectedCourse.reviews.length > 0 ? (
+                        <List
+                          itemLayout="vertical"
+                          dataSource={selectedCourse.reviews}
+                          renderItem={(review) => (
+                            <List.Item>
+                              <div style={{ marginBottom: '8px' }}>
+                                <Text strong>{review.userName}</Text>
+                                <Text type="secondary" style={{ marginLeft: '8px' }}>
+                                  {review.date}
+                                </Text>
+                              </div>
+                              <Rate disabled defaultValue={review.rating} />
+                              <Paragraph>{review.comment}</Paragraph>
+                            </List.Item>
+                          )}
+                        />
+                      ) : (
+                        <Paragraph>No reviews yet. Be the first to review this course!</Paragraph>
+                      )}
+                    </TabPane>
+                  </Tabs>
                   
-                  <div style={{ marginBottom: '16px' }}>
-                    <Text strong>Instructor:</Text> {selectedCourse.instructor}
-                  </div>
-                  <div style={{ marginBottom: '16px' }}>
-                    <Text strong>Duration:</Text> {selectedCourse.duration}
-                  </div>
-                  <div style={{ marginBottom: '16px' }}>
-                    <Text strong>Category:</Text> {selectedCourse.category}
-                  </div>
-                  <div style={{ marginBottom: '16px' }}>
-                    <Text strong>Provider:</Text> {selectedCourse.provider}
-                  </div>
-                  <div style={{ marginBottom: '24px' }}>
-                    <Text strong>Published Date:</Text> {selectedCourse.date}
-                  </div>
-                  
-                  <div style={{ marginBottom: '24px' }}>
+                  {/* Enroll button */}
+                  <div style={{ marginTop: '24px' }}>
                     <Button 
                       type="primary" 
                       size="large" 
                       icon={<ShoppingCartOutlined />} 
                       onClick={() => handleEnroll(selectedCourse)}
-                      style={{ marginRight: '16px' }}
                     >
-                      Enroll Now
+                      {(selectedCourse.price === 0 || selectedCourse.totalCostOfTrainingPerTrainee === 0) 
+                        ? 'Enroll For Free' 
+                        : 'Enroll Now'}
                     </Button>
-                    <Button 
-                      size="large" 
-                      icon={<StarOutlined />}
-                      onClick={() => setReviewModalVisible(true)}
-                    >
-                      Write a Review
-                    </Button>
-                  </div>
-                  
-                  <div style={{ marginTop: '32px' }}>
-                    <Title level={4}>Reviews</Title>
-                    {selectedCourse.reviews && selectedCourse.reviews.length > 0 ? (
-                      <List
-                        itemLayout="vertical"
-                        dataSource={selectedCourse.reviews}
-                        renderItem={(review) => (
-                          <List.Item>
-                            <div style={{ marginBottom: '8px' }}>
-                              <Text strong>{review.userName}</Text>
-                              <Text type="secondary" style={{ marginLeft: '8px' }}>
-                                {review.date}
-                              </Text>
-                            </div>
-                            <Rate disabled defaultValue={review.rating} />
-                            <Paragraph>{review.comment}</Paragraph>
-                          </List.Item>
-                        )}
-                      />
-                    ) : (
-                      <Paragraph>No reviews yet. Be the first to review this course!</Paragraph>
-                    )}
                   </div>
                 </>
               ) : (
-                <Paragraph type="secondary">
-                  Please select a course from the left to view its details.
-                </Paragraph>
+                <Row justify="center" align="middle">
+                  <Col xs={20} lg={5} style={{ maxHeight: '100vh'}}>
+                    <Empty
+                      image="https://gw.alipayobjects.com/zos/antfincdn/ZHrcdLPrvN/empty.svg"
+                      description={
+                        <Typography.Text>
+                          Please select a course from the list on the left to view its details.
+                        </Typography.Text>
+                      }
+                    >
+                    </Empty>
+                  </Col>
+                </Row>
               )}
             </Card>
           </Col>
         </Row>
       </Content>
       
+      {/* Review modal */}
       <Modal
         title="Write a Review"
         open={reviewModalVisible}

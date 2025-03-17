@@ -14,6 +14,8 @@ import ContactUsPage from './view/ContactUsPage';
 import SearchCoursePage from './view/SearchCoursePage';
 import CheckoutPage from './view/CheckoutPage';
 import AdminManagementPage from './view/AdminManagementPage';
+import ForgetPasswordPage from './view/ForgetPasswordPage';
+import AdminCreationPage from './view/AdminCreationPage';
 
 const { Header, Footer, Content } = Layout;
 
@@ -58,7 +60,6 @@ const App: FC = () => (
             navLayout={navConfig.navLayout}
             leftNavItems={navConfig.leftNavItems}
             rightNavItems={navConfig.rightNavItems}
-            // user = sessionStorage.
           />
         </Header>
         <Content style={{ flex: 1, padding: '16px, 0px', overflow: 'hidden', }}> {/* Flex to fill remaining space */}
@@ -73,6 +74,8 @@ const App: FC = () => (
             <Route path="/searchCourse" element={<SearchCoursePage />} />
             <Route path="/checkout" element={<CheckoutPage />} />
             <Route path="/adminManagementPage" element={<AdminManagementPage />} />
+            <Route path="/forgetpassword" element={<ForgetPasswordPage />} />
+            <Route path="/adminCreation" element={<AdminCreationPage />} />
 
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
