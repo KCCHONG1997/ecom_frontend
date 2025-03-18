@@ -34,7 +34,7 @@ ModuleRegistry.registerModules([
 
 const myDarkTheme = themeQuartz.withPart(colorSchemeDark);
 const { Content } = Layout;
-const tableNames = ['Learners', 'Producer', 'Courses', 'Admin', 'Purchase History', 'Comments'];
+const tableNames = ['UserAccount', 'Learners', 'Producer', 'Courses', 'Admin', 'Purchase History', 'Contact Us Feedback'];
 
 const AdminManagementPage = () => {
   const navigate = useNavigate();
@@ -172,7 +172,7 @@ const AdminManagementPage = () => {
       if (!response.ok) {
         throw new Error();
       }
-      if (response.ok){
+      if (response.ok) {
         message.success('Changes saved successfully.');
       }
       setHasUnsavedChanges(false);
