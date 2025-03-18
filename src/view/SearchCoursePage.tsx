@@ -205,6 +205,21 @@ const SearchCoursePage: React.FC = () => {
   };
 
   const handleEnroll = (course: Course) => {
+    // Check if user is logged in
+    const userJson = sessionStorage.getItem('user');
+    if (!userJson) {
+      Modal.confirm({
+        title: 'Login Required',
+        content: 'You need to be logged in to enroll in courses. Would you like to login now?',
+        okText: 'Login',
+        cancelText: 'Cancel',
+        onOk: () => {
+          navigate('/login');
+        }
+      });
+      return;
+    }
+    
     localStorage.setItem('selectedCourse', JSON.stringify(course));
     navigate('/checkout');
   };
@@ -353,7 +368,7 @@ const SearchCoursePage: React.FC = () => {
                         </div>
                         {course.reviews && course.reviews.length > 0 && (
                           <div>
-                            <Rate disabled defaultValue={getAverageRating(course)} />
+                            <Rate disabled value={getAverageRating(course)} />
                             <Text type="secondary"> ({course.reviews?.length || 0} reviews)</Text>
                           </div>
                         )}
@@ -435,11 +450,30 @@ const SearchCoursePage: React.FC = () => {
                   )}
                   
                   {/* Rating display */}
-                  <div style={{ display: 'flex', marginBottom: '16px' }}>
-                    <Rate disabled value={getAverageRating(selectedCourse)} />
-                    <Text style={{ marginLeft: '8px' }}>
-                      ({selectedCourse.reviews?.length || 0} reviews)
-                    </Text>
+                  <div style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center',
+                    marginBottom: '16px' 
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                      <Rate disabled value={getAverageRating(selectedCourse)} />
+                      <Text style={{ marginLeft: '8px' }}>
+                        ({selectedCourse.reviews?.length || 0} reviews)
+                      </Text>
+                    </div>
+                    
+                    {/* Enroll button */}
+                    <Button 
+                      type="primary" 
+                      size="large" 
+                      icon={<ShoppingCartOutlined />} 
+                      onClick={() => handleEnroll(selectedCourse)}
+                    >
+                      {(selectedCourse.price === 0 || selectedCourse.totalCostOfTrainingPerTrainee === 0) 
+                        ? 'Enroll For Free' 
+                        : 'Enroll Now'}
+                    </Button>
                   </div>
                   
                   {/* Tabs for course details */}
@@ -489,7 +523,7 @@ const SearchCoursePage: React.FC = () => {
                                   {review.date}
                                 </Text>
                               </div>
-                              <Rate disabled defaultValue={review.rating} />
+                              <Rate disabled value={review.rating} />
                               <Paragraph>{review.comment}</Paragraph>
                             </List.Item>
                           )}
@@ -499,20 +533,6 @@ const SearchCoursePage: React.FC = () => {
                       )}
                     </TabPane>
                   </Tabs>
-                  
-                  {/* Enroll button */}
-                  <div style={{ marginTop: '24px' }}>
-                    <Button 
-                      type="primary" 
-                      size="large" 
-                      icon={<ShoppingCartOutlined />} 
-                      onClick={() => handleEnroll(selectedCourse)}
-                    >
-                      {(selectedCourse.price === 0 || selectedCourse.totalCostOfTrainingPerTrainee === 0) 
-                        ? 'Enroll For Free' 
-                        : 'Enroll Now'}
-                    </Button>
-                  </div>
                 </>
               ) : (
                 <Row justify="center" align="middle">
