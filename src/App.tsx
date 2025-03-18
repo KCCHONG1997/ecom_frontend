@@ -12,6 +12,7 @@ import RegisterationPage from './view/RegisterationPage';
 import LearnerProfilePage from './view/LearnerProfilePage';
 import ContactFeedbackPage from './view/ContactFeedbackPage';
 import SearchCoursePage from './view/SearchCoursePage';
+import CheckoutPage from './view/CheckoutPage';
 import AdminManagementPage from './view/AdminManagementPage';
 import ForgetPasswordPage from './view/ForgetPasswordPage';
 import AdminCreationPage from './view/AdminCreationPage';
@@ -71,6 +72,7 @@ const App: FC = () => (
             <Route path="/learnerProfile" element={<LearnerProfilePage />} />
             <Route path="/contactus" element={<ContactFeedbackPage />} />
             <Route path="/searchCourse" element={<SearchCoursePage />} />
+            <Route path="/checkout" element={<CheckoutPage />} />
             <Route path="/adminManagementPage" element={<AdminManagementPage />} />
             <Route path="/forgetpassword" element={<ForgetPasswordPage />} />
             <Route path="/adminCreation" element={<AdminCreationPage />} />
