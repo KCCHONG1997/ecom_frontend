@@ -10,7 +10,7 @@ import NotFoundPage from './global/NotFoundPage';
 import LoginPage from './view/LoginPage';
 import RegisterationPage from './view/RegisterationPage';
 import LearnerProfilePage from './view/LearnerProfilePage';
-import ContactUsPage from './view/ContactUsPage';
+import ContactFeedbackPage from './view/ContactFeedbackPage';
 import SearchCoursePage from './view/SearchCoursePage';
 import CheckoutPage from './view/CheckoutPage';
 import AdminManagementPage from './view/AdminManagementPage';
@@ -70,7 +70,7 @@ const App: FC = () => (
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterationPage />} />
             <Route path="/learnerProfile" element={<LearnerProfilePage />} />
-            <Route path="/contactus" element={<ContactUsPage />} />
+            <Route path="/contactus" element={<ContactFeedbackPage />} />
             <Route path="/searchCourse" element={<SearchCoursePage />} />
             <Route path="/checkout" element={<CheckoutPage />} />
             <Route path="/adminManagementPage" element={<AdminManagementPage />} />

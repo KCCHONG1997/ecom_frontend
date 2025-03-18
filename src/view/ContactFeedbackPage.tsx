@@ -33,7 +33,7 @@ const ContactUsPage: React.FC = () => {
         const feedbackData = { ...values, screenshot: fileList, user_id };
     
         try {
-            const response = await fetch(`http://localhost:${PORT}/api/contactus`, {
+            const response = await fetch(`http://localhost:${PORT}/api/contactusfeedback`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
