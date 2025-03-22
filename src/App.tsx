@@ -15,6 +15,10 @@ import SearchCoursePage from './view/SearchCoursePage';
 import AdminManagementPage from './view/AdminManagementPage';
 import ForgetPasswordPage from './view/ForgetPasswordPage';
 import AdminCreationPage from './view/AdminCreationPage';
+import ProviderCreateCoursePage from './view/ProviderCreateCoursePage';
+import ProviderViewCoursePage from './view/ProviderViewCoursePage';
+import ProviderDeleteCoursePage from './view/ProviderDeleteCoursePage';
+import ProviderUpdateCoursePage from './view/ProviderUpdateCoursePage';
 
 const { Header, Footer, Content } = Layout;
 
@@ -74,6 +78,10 @@ const App: FC = () => (
             <Route path="/adminManagementPage" element={<AdminManagementPage />} />
             <Route path="/forgetpassword" element={<ForgetPasswordPage />} />
             <Route path="/adminCreation" element={<AdminCreationPage />} />
+            <Route path="/createcourse" element={<ProviderCreateCoursePage />} />
+            <Route path="/viewcourse" element={<ProviderViewCoursePage />} />
+            <Route path="/deletecourse" element={<ProviderDeleteCoursePage/>} />
+            <Route path="/updatecourse" element={<ProviderUpdateCoursePage/>} />
 
             <Route path="*" element={<NotFoundPage />} />
           </Routes>

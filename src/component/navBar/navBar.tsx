@@ -39,6 +39,31 @@ const NavBar: React.FC<NavConfig> = (config) => {
     { key: 'logout', label: 'Logout', onClick: handleLogout },
   ];
 
+  //shawn added
+  if (user && ((user as unknown) as { role: string }).role === 'provider') {
+    menuItems.splice(1, 0, {
+      key: 'createcourse',
+      label: 'Create Course',
+      onClick: () => navigate('/createcourse'),
+    },
+    {
+      key: 'viewcourses',
+      label : 'View Courses',
+      onClick: () => navigate('/viewcourse')
+    },
+    {
+      key: 'deletcourses',
+      label : 'Delete Courses',
+      onClick: () => navigate('/deletecourse')
+    },
+    {
+      key: 'updatecourses',
+      label: 'Update Courses',
+      onClick: () => navigate('/updatecourse')
+    }
+  );
+  }
+
   return (
     <Spin spinning={isLoading || isLoggingOut} size="large">
       <Row justify="space-between" align="middle" style={{ width: '100%' }}>
@@ -55,6 +80,7 @@ const NavBar: React.FC<NavConfig> = (config) => {
 
         {/* Right Navigation */}
         <Col span={4} offset={7}>
+
           {user ? (
             <Dropdown menu={{ items: menuItems }} placement="bottomRight">
               <div style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', color: 'whitesmoke' }}>
@@ -77,6 +103,7 @@ const NavBar: React.FC<NavConfig> = (config) => {
         </Col>
       </Row>
     </Spin>
+
   );
 };
 

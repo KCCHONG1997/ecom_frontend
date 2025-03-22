@@ -87,7 +87,7 @@ const RegistrationPage: React.FC = () => {
           username: values.username,
           email: values.email,
           password: values.password,
-          role: 'producer',
+          role: 'provider',
           phone_number: values.phoneNumber,
           lecture_team_id: values.lectureTeamID,
           organization_name: values.organization,
