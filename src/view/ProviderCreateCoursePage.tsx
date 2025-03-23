@@ -1,29 +1,47 @@
 import React, { useState } from 'react';
-import { Form, Input, Button, message, InputNumber, Select } from 'antd';
+import { Form, Input, Button, message, InputNumber, Select, Upload } from 'antd';
+import { UploadOutlined } from '@ant-design/icons';
 
-
-//interface object
 interface userSessionObject {
-  id: string,
-  username: string,
-  role: string,
-} 
+  id: string;
+  username: string;
+  role: string;
+}
 
 const ProviderCreateCoursePage: React.FC = () => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
 
-  //to get the user information when loggin from the sessionstorage==>user is the object whenever a person login
+  // Retrieve user session from localStorage
   const userString = sessionStorage.getItem('user');
-  //when you get the userstring is actually a string, so need to Json.parse to convert string into and object
   const user: userSessionObject | null = userString ? JSON.parse(userString) : null;
-  //to get the value of the object attribute called user.id
   const user_id = user?.id;
-  console.log(user_id);
+  console.log('User ID:', user_id);
+
+  // Dummy upload function for demonstration; replace with your actual upload logic
+  const dummyRequest = ({ onSuccess }: any) => {
+    setTimeout(() => {
+      onSuccess("ok");
+    }, 0);
+  };
+
+  // Normalize the uploaded file data
+  const normFile = (e: any) => {
+    console.log('Upload event:', e);
+    if (Array.isArray(e)) {
+      return e;
+    }
+    return e && e.fileList;
+  };
 
   const onFinish = async (values: any) => {
+    values.total_cost = values.price; // because we do not have any discount factor here, just let them equal to each other first.
+    values.creator_id = user_id;
+    if (values.tile_image_url && Array.isArray(values.tile_image_url)) {
+      values.tile_image_url = values.tile_image_url[0]?.name || '';
+    }
 
-    console.log("onFinish: ", values);
+    console.log("Form values to submit:", values);
     setLoading(true);
     try {
       const response = await fetch('http://localhost:5000/api/createCourse', {
@@ -33,7 +51,6 @@ const ProviderCreateCoursePage: React.FC = () => {
         },
         body: JSON.stringify(values),
       });
-
       const data = await response.json();
       if (response.ok) {
         message.success('Course created successfully!');
@@ -53,17 +70,13 @@ const ProviderCreateCoursePage: React.FC = () => {
     <div style={{ maxWidth: 800, margin: '0 auto', padding: '24px' }}>
       <h1>Create a New Course</h1>
       <Form form={form} layout="vertical" onFinish={onFinish}>
-        {/* Creator ID - You might want to remove this field and get it from authentication */}
+        {/* Creator ID (hidden) */}
         <Form.Item
           name="creator_id"
-          label="Creator ID"
-          rules={[{ required: true, message: 'Please input creator ID!' }]}
-          //to give the initial input field as user_id
-          initialValue = {user_id}
-          // to hide the form
+          initialValue={user_id}
           hidden
+          rules={[{ required: true, message: 'Please input creator ID!' }]}
         >
-          /*fetch user id from localstorage*/
           <InputNumber style={{ width: '100%' }} />
         </Form.Item>
 
@@ -107,7 +120,7 @@ const ProviderCreateCoursePage: React.FC = () => {
           <Input placeholder="Enter category" />
         </Form.Item>
 
-        <Form.Item
+        {/* <Form.Item
           name="source"
           label="Course Source"
           rules={[{ required: true, message: 'Please select course source!' }]}
@@ -116,19 +129,14 @@ const ProviderCreateCoursePage: React.FC = () => {
             <Select.Option value="Internal">Internal</Select.Option>
             <Select.Option value="External">External</Select.Option>
           </Select>
-        </Form.Item>
+        </Form.Item> */}
 
-        <Form.Item
-          name="external_reference_number"
-          label="External Reference Number"
-        >
-          <Input placeholder="Enter external reference number" />
-        </Form.Item>
+        {/* Removed External Reference Number */}
 
         <Form.Item
           name="training_provider_alias"
           label="Training Provider Alias"
-          rules={[{ required: true, message: 'Please input provider alias!' }]}
+        // rules={[{ required: true, message: 'Please input provider alias!' }]}
         >
           <Input placeholder="Enter training provider alias" />
         </Form.Item>
@@ -141,20 +149,19 @@ const ProviderCreateCoursePage: React.FC = () => {
           <InputNumber min={1} style={{ width: '100%' }} />
         </Form.Item>
 
-        <Form.Item
-          name="total_cost"
-          label="Total Cost (SGD)"
-          rules={[{ required: true, message: 'Please input total cost!' }]}
-        >
-          <InputNumber min={0} style={{ width: '100%' }} />
-        </Form.Item>
+        {/* Removed Total Cost; it will be set equal to price */}
 
         <Form.Item
           name="tile_image_url"
-          label="Tile Image URL"
-          rules={[{ required: true, message: 'Please input image URL!' }]}
+          label="Course Image"
+          valuePropName="fileList"
+          getValueFromEvent={normFile}
+          extra="Upload course image"
+          // rules={[{ required: true, message: 'Please upload course image!' }]}
         >
-          <Input placeholder="Enter image URL (e.g., https://example.com/image.jpg)" />
+          <Upload customRequest={dummyRequest} listType="picture">
+            <Button icon={<UploadOutlined />}>Click to Upload</Button>
+          </Upload>
         </Form.Item>
 
         <Form.Item>

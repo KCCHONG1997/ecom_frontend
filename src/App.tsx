@@ -80,8 +80,8 @@ const App: FC = () => (
             <Route path="/adminManagementPage" element={<AdminManagementPage />} />
             <Route path="/forgetpassword" element={<ForgetPasswordPage />} />
             <Route path="/adminCreation" element={<AdminCreationPage />} />
-            {/* <Route path="/createcourse" element={<ProviderCreateCoursePage />} />
-            <Route path="/viewcourse" element={<ProviderViewCoursePage />} />
+            <Route path="/createcourse" element={<ProviderCreateCoursePage />} />
+            {/* <Route path="/viewcourse" element={<ProviderViewCoursePage />} />
             <Route path="/deletecourse" element={<ProviderDeleteCoursePage/>} />
             <Route path="/updatecourse" element={<ProviderUpdateCoursePage/>} /> */}
             <Route path="/providerDashboard" element={<ProviderDashboard/>} />
