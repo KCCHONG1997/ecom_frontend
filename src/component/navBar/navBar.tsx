@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Row, Col } from 'antd';
 import { useSession } from '../../hooks/useSession'; // Custom hook for session management
+import { getUserFromSession } from '../../utils/sessionUtils';
 
 export interface NavConfig {
   navBarTheme: 'light' | 'dark';
@@ -41,25 +42,32 @@ const NavBar: React.FC<NavConfig> = (config) => {
 
   //shawn added
   if (user && ((user as unknown) as { role: string }).role === 'provider') {
-    menuItems.splice(1, 0, {
-      key: 'createcourse',
-      label: 'Create Course',
-      onClick: () => navigate('/createcourse'),
-    },
+    menuItems.splice(1, 0, 
+    // {
+    //   key: 'createcourse',
+    //   label: 'Create Course',
+    //   onClick: () => navigate('/createcourse'),
+    // },
+    // {
+    //   key: 'viewcourses',
+    //   label : 'View Courses',
+    //   onClick: () => navigate('/viewcourse')
+    // },
+    // {
+    //   key: 'deletcourses',
+    //   label : 'Delete Courses',
+    //   onClick: () => navigate('/deletecourse')
+    // },
+    // {
+    //   key: 'updatecourses',
+    //   label: 'Update Courses',
+    //   onClick: () => navigate('/updatecourse')
+    // },
+    // KC ADDED 23 Mar
     {
-      key: 'viewcourses',
-      label : 'View Courses',
-      onClick: () => navigate('/viewcourse')
-    },
-    {
-      key: 'deletcourses',
-      label : 'Delete Courses',
-      onClick: () => navigate('/deletecourse')
-    },
-    {
-      key: 'updatecourses',
-      label: 'Update Courses',
-      onClick: () => navigate('/updatecourse')
+      key: 'providerDashboard',
+      label: 'Dashboard',
+      onClick: () => navigate(`/providerDashboard`) 
     }
   );
   }
