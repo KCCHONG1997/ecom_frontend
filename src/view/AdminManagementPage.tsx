@@ -133,9 +133,9 @@ const AdminManagementPage = () => {
     setIsEditModalVisible(false);
   };
 
-  const onCellValueChanged = useCallback(() => {
-    setHasUnsavedChanges(true);
-  }, []);
+  // const onCellValueChanged = useCallback(() => {
+  //   setHasUnsavedChanges(true);
+  // }, []);
 
   const handleTableChange = (newTable: string) => {
     if (hasUnsavedChanges) {
@@ -163,6 +163,22 @@ const AdminManagementPage = () => {
     setPendingTable(null);
     setIsConfirmModalVisible(false);
   };
+
+  // Inline editing is now done directly in the grid.
+  // Enable single click editing for Learners, Producer, and Courses.
+  // const enableSingleClickEdit =
+  //   selectedTable === 'Learners' || selectedTable === 'Producer' || selectedTable === 'Courses';
+
+  // const onCellValueChanged = useCallback(
+  //   (event: CellValueChangedEvent) => {
+  //     if (event.rowIndex === null) return; // or handle null case appropriately
+  //     const updatedData = [...rowData];
+  //     updatedData[event.rowIndex] = event.data;
+  //     setRowData(updatedData);
+  //     message.success('Data updated successfully.');
+  //   },
+  //   [rowData]
+  // );
 
   const handleSaveChanges = async () => {
     try {
@@ -195,7 +211,6 @@ const AdminManagementPage = () => {
             </Breadcrumb.Item>
           ))}
         </Breadcrumb>
-        <Button onClick={() => navigate('/adminCreation')} type="primary" style={{ marginBottom: 16, marginRight: '5px' }}>
         {selectedTable === 'Admin' && (
           <Button
             onClick={() => navigate('/adminCreation')}
@@ -205,9 +220,6 @@ const AdminManagementPage = () => {
             Create New Admin Account
           </Button>
         )}
-
-          Create New Admin Account
-        </Button>
         <Button onClick={exportSelectedRows} type="primary" style={{ marginBottom: 16, marginRight: '5px'}}>
           Export Selected Rows as CSV
         </Button>
@@ -229,7 +241,7 @@ const AdminManagementPage = () => {
               rowSelection={rowSelection}
               onGridReady={onGridReady}
               rowHeight={30}
-              onCellValueChanged={onCellValueChanged}
+              // onCellValueChanged={onCellValueChanged}
               // singleClickEdit={enableSingleClickEdit}
             // onCellValueChanged={onCellValueChanged}
             onSelectionChanged={(params) => {
