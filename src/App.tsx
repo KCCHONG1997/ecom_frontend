@@ -14,6 +14,12 @@ import ContactFeedbackPage from './view/ContactFeedbackPage';
 import SearchCoursePage from './view/SearchCoursePage';
 import CheckoutPage from './view/CheckoutPage';
 import AdminManagementPage from './view/AdminManagementPage';
+import ProviderCreateCoursePage from './view/ProviderCreateCoursePage';
+import ProviderViewCoursePage from './view/ProviderViewCoursePage';
+import ProviderDeleteCoursePage from './view/ProviderDeleteCoursePage';
+import ProviderUpdateCoursePage from './view/ProviderUpdateCoursePage';
+import ProviderDashboard from './view/ProviderDashboard';
+import CourseDetailPage from './view/CourseDetailPage';
 import ForgetPasswordPage from './view/ForgetPasswordPage';
 import AdminCreationPage from './view/AdminCreationPage';
 
@@ -74,6 +80,15 @@ const App: FC = () => (
             <Route path="/searchCourse" element={<SearchCoursePage />} />
             <Route path="/checkout" element={<CheckoutPage />} />
             <Route path="/adminManagementPage" element={<AdminManagementPage />} />
+            <Route path="/forgetpassword" element={<ForgetPasswordPage />} />
+            <Route path="/adminCreation" element={<AdminCreationPage />} />
+            <Route path="/createcourse" element={<ProviderCreateCoursePage />} />
+            {/* <Route path="/viewcourse" element={<ProviderViewCoursePage />} />
+            <Route path="/deletecourse" element={<ProviderDeleteCoursePage/>} />
+            <Route path="/updatecourse" element={<ProviderUpdateCoursePage/>} /> */}
+            <Route path="/providerDashboard" element={<ProviderDashboard/>} />
+            <Route path="/course-detail/:id" element={<CourseDetailPage />} />
+            {/* <Route path="/providerDasboard" element={<ProviderDashboard/>} /> */}
             <Route path="/forgetpassword" element={<ForgetPasswordPage />} />
             <Route path="/adminCreation" element={<AdminCreationPage />} />
 
