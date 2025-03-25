@@ -13,28 +13,33 @@ const AdminCreationPage: React.FC = () => {
     setLoading(true);
 
     try {
-      const response = await fetch(`http://localhost:${PORT}/api/adminCreation`, {
+      const [firstName, ...rest] = values.name.trim().split(' ');
+      const lastName = rest.join(' ');
+
+      const response = await fetch(`http://localhost:${PORT}/api/useraccounts`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          name: values.name,
+          username: values.username,
           email: values.email,
-          password: values.password,
-          role: values.role,
+          password_hash: values.password, 
+          first_name: firstName,
+          last_name: lastName,
+          role: 'admin',
         }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        message.error(`Error: ${data.message}`);
+        message.error(`Error: ${data.error || data.message}`);
         return;
       }
 
       message.success('Admin account created successfully!');
-      navigate('/admin');
+      navigate('/AdminManagementPage');
     } catch (error) {
       message.error('Failed to create admin account.');
       console.error('Error:', error);
@@ -48,45 +53,53 @@ const AdminCreationPage: React.FC = () => {
       <Content style={{ padding: '24px', maxWidth: '600px', margin: '0 auto' }}>
         <h2 style={{ color: '#fff' }}>Create New Admin Account</h2>
         <Form
-          name="create-admin"
-          onFinish={onFinish}
-          initialValues={{ remember: true }}
-          layout="vertical"
-          style={{ background: '#fff', padding: '20px', borderRadius: '8px' }}
+        name="create-admin"
+        onFinish={onFinish}
+        initialValues={{ remember: true }}
+        layout="vertical"
+        style={{ background: '#fff', padding: '20px', borderRadius: '8px' }}
         >
-          <Form.Item
-            label="Name"
-            name="name"
-            rules={[{ required: true, message: 'Please input the admin name!' }]}
-          >
-            <Input />
-          </Form.Item>
+        <Form.Item
+          label="Name"
+          name="name"
+          rules={[{ required: true, message: 'Please input the admin name!' }]}
+        >
+          <Input />
+        </Form.Item>
 
-          <Form.Item
-            label="Email"
-            name="email"
-            rules={[
-              { required: true, message: 'Please input the email!' },
-              { type: 'email', message: 'The input is not a valid email!' },
-            ]}
-          >
-            <Input />
-          </Form.Item>
+        <Form.Item
+          label="Username"
+          name="username"
+          rules={[{ required: true, message: 'Please input the username!' }]}
+        >
+          <Input />
+        </Form.Item>
 
-          <Form.Item
-            label="Password"
-            name="password"
-            rules={[{ required: true, message: 'Please input the password!' }]}
-          >
-            <Input.Password />
-          </Form.Item>
+        <Form.Item
+          label="Email"
+          name="email"
+          rules={[
+            { required: true, message: 'Please input the email!' },
+            { type: 'email', message: 'The input is not a valid email!' },
+          ]}
+        >
+          <Input />
+        </Form.Item>
 
-          <Form.Item>
-            <Button type="primary" htmlType="submit" block loading={loading}>
-              Create Admin
-            </Button>
-          </Form.Item>
-        </Form>
+        <Form.Item
+          label="Password"
+          name="password"
+          rules={[{ required: true, message: 'Please input the password!' }]}
+        >
+          <Input.Password />
+        </Form.Item>
+
+        <Form.Item>
+          <Button type="primary" htmlType="submit" block loading={loading}>
+            Create Admin
+          </Button>
+        </Form.Item>
+      </Form>
       </Content>
     </Layout>
   );
