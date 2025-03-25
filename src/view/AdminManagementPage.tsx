@@ -16,7 +16,6 @@ import {
   TextFilterModule,
   DateFilterModule,
   CsvExportModule,
-  CellValueChangedEvent,
 } from 'ag-grid-community';
 
 import 'ag-grid-community/styles/ag-theme-alpine.css';
@@ -199,6 +198,57 @@ const AdminManagementPage = () => {
     }
   };
 
+  const handleDeleteAdmins = async () => {
+    const selectedRows = gridApi?.getSelectedRows();
+  
+    if (!selectedRows || selectedRows.length === 0) {
+      message.warning('Please select at least one admin to delete.');
+      return;
+    }
+  
+    Modal.confirm({
+      title: 'Confirm Delete',
+      content: `Are you sure you want to delete ${selectedRows.length} admin(s)?`,
+      okText: 'Yes, Delete',
+      okType: 'danger',
+      cancelText: 'Cancel',
+      onOk: async () => {
+        try {
+          for (const admin of selectedRows) {
+            const userId = admin.user_id || admin.id; // fallback just in case
+            console.log("Deleting admin with ID:", userId);
+            if (!userId) {
+              console.warn('No user_id found for row:', admin);
+              continue;
+            }
+  
+            const res = await fetch(`http://localhost:${PORT}/api/useraccounts/${userId}`, {
+              method: 'DELETE',
+            });
+  
+            const result = await res.json();
+  
+            if (!res.ok) {
+              message.error(result.error || 'Failed to delete admin');
+              continue;
+            }
+          }
+  
+          message.success('Admin(s) deleted successfully.');
+        
+  
+          // Refresh table
+          const response = await fetch(`http://localhost:${PORT}/api/admin/data?table=Admin`);
+          const data = await response.json();
+          setRowData(data);
+        } catch (err) {
+          console.error('Delete error:', err);
+          message.error('An error occurred while deleting admins.');
+        }
+      },
+    });
+  };  
+
   return (
     <Layout style={{ minHeight: '100vh', background: '#141414' }}>
       <Content style={{ padding: '24px' }}>
@@ -226,6 +276,15 @@ const AdminManagementPage = () => {
         <Button onClick={handleSaveChanges} type="primary" style={{ marginBottom: 16, marginRight: '5px' }}>
           Save Changes
         </Button>
+        {selectedTable === 'Admin' && (
+          <Button
+            danger
+            onClick={handleDeleteAdmins}
+            style={{ marginBottom: 16, marginRight: '5px' }}
+          >
+            Delete Selected Admin(s)
+          </Button>
+        )}
         {(selectedTable === 'Learners' || selectedTable === 'Producer' || selectedTable === 'Courses') && (
           <Button onClick={handleEditClick} type="primary" style={{ marginBottom: 16 }}>
             Edit Selected Row
@@ -241,6 +300,7 @@ const AdminManagementPage = () => {
               rowSelection={rowSelection}
               onGridReady={onGridReady}
               rowHeight={30}
+              getRowId={(params) => params.data.user_id?.toString()}
               // onCellValueChanged={onCellValueChanged}
               // singleClickEdit={enableSingleClickEdit}
             // onCellValueChanged={onCellValueChanged}
