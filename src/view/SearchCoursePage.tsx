@@ -234,9 +234,6 @@ const SearchCoursePage: React.FC = () => {
     }
     
     try {
-      // Add logging to debug the issue
-      console.log('Checking enrollment for:', { courseId: course.courseId, userId: user.id });
-      
       const response = await fetch(`http://localhost:5000/api/courses/${course.courseId}/enrollment-check?userId=${user.id}`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
@@ -252,26 +249,20 @@ const SearchCoursePage: React.FC = () => {
       const data = await response.json();
       console.log('Enrollment check data:', data);
       
-      // CRITICAL: Use strict comparison with boolean true
       if (data.isEnrolled === true) {
         console.log('User is already enrolled');
         message.info('You are already enrolled in this course');
-        return; // Make sure this return statement is reached
+        return;
       }
       
-      console.log('User is not enrolled, proceeding to checkout');
-      // If not enrolled, proceed to checkout
       localStorage.setItem('selectedCourse', JSON.stringify(course));
       navigate('/checkout');
       
     } catch (error) {
       console.error('Error checking enrollment status:', error);
-      
-      // Don't allow proceeding on error - this is safer
       message.error('Unable to verify enrollment status. Please try again later.');
     }
   };
-
   const handleSubmitReview = () => {
     if (!selectedCourse) return;
     
