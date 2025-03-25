@@ -12,19 +12,17 @@ const { Option } = Select;
 const { TabPane } = Tabs;
 
 export type Course = {
-  externalReferenceNumber: string;
+  courseId?: number;
+  externalReferenceNumber?: string;
   title: string;
   description?: string;
-  content?: string;
-  instructor?: string;
   duration?: string;
   category?: string;
   provider?: string;
   date?: string;
   price?: number;
   objective?: string;
-  totalCostOfTrainingPerTrainee?: number;
-  totalTrainingDurationHour?: number;
+  totalTrainingHours?: number;
   tileImageURL?: string;
   detailImageURL?: string;
   url?: string;
@@ -92,17 +90,16 @@ const SearchCoursePage: React.FC = () => {
       console.log("externalData: ", externalData);
 
       const internalCourses: Course[] = (internalData.data || []).map((course: any) => ({
-        externalReferenceNumber: course.external_reference_number,
+        courseId: course.course_id,
+        externalReferenceNumber: course.external_reference_number || `internal-${course.course_id}`,
         title: course.name,
-        content: course.description,
         description: course.description,
         category: course.category || '',
         provider: course.training_provider_alias || '',
         date: course.created_at ? course.created_at.split('T')[0] : '',
         objective: '',
-        totalCostOfTrainingPerTrainee: course.total_cost || 0,
         price: course.total_cost || 0,
-        totalTrainingDurationHour: course.total_training_hours || 0,
+        totalTrainingHours: course.total_training_hours || 0,
         duration: `${course.total_training_hours || 0} hours`,
         tileImageURL: course.tile_image_url || '',
         detailImageURL: '',
@@ -113,17 +110,16 @@ const SearchCoursePage: React.FC = () => {
       }));
 
       const externalCourses: Course[] = (externalData.data.courses || []).map((course: any) => ({
+        courseId: 0,
         externalReferenceNumber: course.externalReferenceNumber,
         title: course.title,
-        content: course.content,
         description: course.content,
         category: course.category || '',
         provider: course.trainingProviderAlias || '',
         date: course.meta?.createDate ? course.meta.createDate.split('T')[0] : '',
         objective: course.objective || '',
-        totalCostOfTrainingPerTrainee: course.totalCostOfTrainingPerTrainee || 0,
         price: course.totalCostOfTrainingPerTrainee || 0,
-        totalTrainingDurationHour: course.totalTrainingDurationHour || 0,
+        totalTrainingHours: course.totalTrainingDurationHour || 0,
         duration: `${course.totalTrainingDurationHour || 0} hours`,
         tileImageURL: course.tileImageURL
           ? (course.tileImageURL.startsWith('/') ? `https://www.myskillsfuture.gov.sg${course.tileImageURL}` : course.tileImageURL)
@@ -204,7 +200,15 @@ const SearchCoursePage: React.FC = () => {
     }
   };
 
-  const handleEnroll = (course: Course) => {
+  const handleEnroll = async (course: Course) => {
+    // Redirect to SkillsFuture SG for external courses
+    if (course.source === 'myskillsfuture') {
+      const externalUrl = course.url || 
+        `https://www.myskillsfuture.gov.sg/content/portal/en/training-exchange/course-directory/course-detail.html?courseReferenceNumber=${course.externalReferenceNumber}`;
+      window.open(externalUrl, '_blank');
+      return;
+    }
+    
     // Check if user is logged in
     const userJson = sessionStorage.getItem('user');
     if (!userJson) {
@@ -220,8 +224,52 @@ const SearchCoursePage: React.FC = () => {
       return;
     }
     
-    localStorage.setItem('selectedCourse', JSON.stringify(course));
-    navigate('/checkout');
+    // User is logged in, parse the user data
+    const user = JSON.parse(userJson);
+    
+    // Ensure course has a valid ID
+    if (!course.courseId) {
+      message.error('Invalid course information');
+      return;
+    }
+    
+    try {
+      // Add logging to debug the issue
+      console.log('Checking enrollment for:', { courseId: course.courseId, userId: user.id });
+      
+      const response = await fetch(`http://localhost:5000/api/courses/${course.courseId}/enrollment-check?userId=${user.id}`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include'
+      });
+      
+      console.log('Response status:', response.status);
+      
+      if (!response.ok) {
+        throw new Error('Failed to verify enrollment status');
+      }
+      
+      const data = await response.json();
+      console.log('Enrollment check data:', data);
+      
+      // CRITICAL: Use strict comparison with boolean true
+      if (data.isEnrolled === true) {
+        console.log('User is already enrolled');
+        message.info('You are already enrolled in this course');
+        return; // Make sure this return statement is reached
+      }
+      
+      console.log('User is not enrolled, proceeding to checkout');
+      // If not enrolled, proceed to checkout
+      localStorage.setItem('selectedCourse', JSON.stringify(course));
+      navigate('/checkout');
+      
+    } catch (error) {
+      console.error('Error checking enrollment status:', error);
+      
+      // Don't allow proceeding on error - this is safer
+      message.error('Unable to verify enrollment status. Please try again later.');
+    }
   };
 
   const handleSubmitReview = () => {
@@ -361,10 +409,14 @@ const SearchCoursePage: React.FC = () => {
                           />
                         )}
                         <Title level={5}>{course.title}</Title>
-                        <Paragraph ellipsis={{ rows: 2 }}>{course.content || course.description}</Paragraph>
+                        <Paragraph ellipsis={{ rows: 2 }}>{course.description}</Paragraph>
                         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                           <Text type="secondary">{course.provider}</Text>
-                          <Text strong>{(course.price === 0 || course.totalCostOfTrainingPerTrainee === 0) ? 'Free' : `$${course.price || course.totalCostOfTrainingPerTrainee}`}</Text>
+                          <Text strong>
+                            {(Number(course.price) === 0 || !course.price) 
+                              ? 'Free' 
+                              : `$${course.price}`}
+                          </Text>
                         </div>
                         {course.reviews && course.reviews.length > 0 && (
                           <div>
@@ -418,9 +470,9 @@ const SearchCoursePage: React.FC = () => {
                   
                   {/* Price display */}
                   <Title level={4}>
-                    {(selectedCourse.price === 0 || selectedCourse.totalCostOfTrainingPerTrainee === 0) 
+                    {(Number(selectedCourse.price) === 0 || !selectedCourse.price) 
                       ? 'Free' 
-                      : `$${selectedCourse.price || selectedCourse.totalCostOfTrainingPerTrainee}`}
+                      : `$${selectedCourse.price}`}
                   </Title>
                   
                   {/* SkillsFuture button for external courses */}
@@ -467,12 +519,14 @@ const SearchCoursePage: React.FC = () => {
                     <Button 
                       type="primary" 
                       size="large" 
-                      icon={<ShoppingCartOutlined />} 
+                      icon={selectedCourse.source === 'myskillsfuture' ? <CheckCircleOutlined /> : <ShoppingCartOutlined />} 
                       onClick={() => handleEnroll(selectedCourse)}
                     >
-                      {(selectedCourse.price === 0 || selectedCourse.totalCostOfTrainingPerTrainee === 0) 
-                        ? 'Enroll For Free' 
-                        : 'Enroll Now'}
+                      {selectedCourse.source === 'myskillsfuture' 
+                        ? 'View on SkillsFuture' 
+                        : ((Number(selectedCourse.price) === 0 || !selectedCourse.price) 
+                          ? 'Enroll For Free' 
+                          : 'Enroll Now')}
                     </Button>
                   </div>
                   
@@ -480,10 +534,10 @@ const SearchCoursePage: React.FC = () => {
                   <Tabs defaultActiveKey="1">
                     <TabPane tab="Details" key="1">
                       <Paragraph><strong>Provider:</strong> {selectedCourse.provider}</Paragraph>
-                      <Paragraph><strong>Cost:</strong> {(selectedCourse.price === 0 || selectedCourse.totalCostOfTrainingPerTrainee === 0) 
-                          ? 'Free' 
-                          : `$${selectedCourse.price || selectedCourse.totalCostOfTrainingPerTrainee}`}</Paragraph>
-                      <Paragraph><strong>Duration:</strong> {selectedCourse.duration || `${selectedCourse.totalTrainingDurationHour} hours`}</Paragraph>
+                      <Paragraph><strong>Cost:</strong> {(Number(selectedCourse.price) === 0 || !selectedCourse.price) 
+                        ? 'Free' 
+                        : `$${selectedCourse.price}`}</Paragraph>
+                      <Paragraph><strong>Duration:</strong> {selectedCourse.duration || `${selectedCourse.totalTrainingHours} hours`}</Paragraph>
                       {selectedCourse.modeOfTrainings && selectedCourse.modeOfTrainings.length > 0 && (
                         <div style={{ marginTop: 16 }}>
                           <Title level={5}>Mode of Training</Title>
@@ -496,7 +550,7 @@ const SearchCoursePage: React.FC = () => {
                       )}
                     </TabPane>
                     <TabPane tab="Description" key="2">
-                      <Paragraph>{selectedCourse.content || selectedCourse.description}</Paragraph>
+                      <Paragraph>{selectedCourse.description || "No description provided."}</Paragraph>
                     </TabPane>
                     <TabPane tab="Objective" key="3">
                       <Paragraph>{selectedCourse.objective || "No objective provided."}</Paragraph>

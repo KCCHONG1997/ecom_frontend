@@ -8,15 +8,17 @@ const { Title, Text, Paragraph } = Typography;
 const { Step } = Steps;
 
 type Course = {
-  id: string;
+  courseId: number;
   title: string;
   description: string;
-  instructor: string;
-  duration: string;
-  category: string;
-  provider: string;
-  date: string;
-  price: number;
+  instructor?: string;
+  duration?: string;
+  category?: string;
+  provider?: string;
+  date?: string;
+  price?: number;
+  externalReferenceNumber?: string;
+  source?: string;
 };
 
 const CheckoutPage: React.FC = () => {
@@ -35,7 +37,7 @@ const CheckoutPage: React.FC = () => {
         setCourse(selectedCourse);
         
         // Automatically skip to confirmation for free courses
-        if (selectedCourse.price === 0) {
+        if (Number(selectedCourse.price) === 0 || !selectedCourse.price) {
           setCurrentStep(2);
         }
       } catch (error) {
@@ -48,6 +50,12 @@ const CheckoutPage: React.FC = () => {
       navigate('/searchCourse');
     }
   }, [navigate]);
+
+  useEffect(() => {
+    if (currentStep === 2 && course) {
+      handleEnrollment();
+    }
+  }, [currentStep]);
 
   const handleNextStep = () => {
     setCurrentStep(currentStep + 1);
@@ -69,10 +77,51 @@ const CheckoutPage: React.FC = () => {
     }, 1500);
   };
 
-  const handleFinish = () => {
-    // Clear selected course from localStorage
+  const handleEnrollment = async () => {
+    try {
+      if (!course) return;
+      
+      // Get user info from session storage
+      const userJson = sessionStorage.getItem('user');
+      if (!userJson) {
+        message.error('User information not found');
+        navigate('/login');
+        return;
+      }
+      
+      const user = JSON.parse(userJson);
+      
+      // Create enrollment in the database
+      const response = await fetch(`http://localhost:5000/api/courses/${course.courseId}/enrollments`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          user_id: user.id,
+          course_id: course.courseId,
+          completion_percentage: 0.00,
+          is_kicked: 0
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to enroll in course');
+      }
+      
+      localStorage.setItem('enrollmentComplete', 'true');
+      message.success('Successfully enrolled in course!');
+      
+    } catch (error) {
+      console.error('Error enrolling in course:', error);
+      message.error('Failed to complete enrollment. Please try again.');
+    }
+  };
+
+  const handleGoToHomepage = () => {
     localStorage.removeItem('selectedCourse');
-    // Navigate to dashboard or course page
+    localStorage.removeItem('enrollmentComplete');
     navigate('/');
   };
 
@@ -108,7 +157,7 @@ const CheckoutPage: React.FC = () => {
                   
                   <Row justify="space-between" style={{ marginTop: '16px' }}>
                     <Col><Title level={5}>Total:</Title></Col>
-                    <Col><Title level={5}>{course.price === 0 ? 'Free' : `$${course.price}`}</Title></Col>
+                    <Col><Title level={5}>{(Number(course.price) === 0 || !course.price) ? 'Free' : `$${course.price}`}</Title></Col>
                   </Row>
                 </Card>
               )}
@@ -179,7 +228,7 @@ const CheckoutPage: React.FC = () => {
                 {course && (
                   <Row justify="space-between" style={{ marginBottom: '24px' }}>
                     <Col><Text strong>Total Amount:</Text></Col>
-                    <Col><Text strong>{course.price === 0 ? 'Free' : `$${course.price}`}</Text></Col>
+                    <Col><Text strong>{(Number(course.price) === 0 || !course.price) ? 'Free' : `$${course.price}`}</Text></Col>
                   </Row>
                 )}
                 
@@ -200,7 +249,7 @@ const CheckoutPage: React.FC = () => {
               title="Payment Successful!"
               subTitle="You have successfully enrolled in the course."
               extra={[
-                <Button type="primary" key="dashboard" onClick={handleFinish}>
+                <Button type="primary" key="dashboard" onClick={handleGoToHomepage}>
                   Go to My Courses
                 </Button>
               ]}
