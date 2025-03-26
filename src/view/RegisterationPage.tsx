@@ -48,6 +48,8 @@ const RegistrationPage: React.FC = () => {
           password: values.password,
           role: 'learner',
           phone_number: values.phoneNumber,
+          firstName: values.firstName,
+          lastName: values.lastName,
           cover_image_url: '',
           profile_image_url: '',
           occupation: '',
