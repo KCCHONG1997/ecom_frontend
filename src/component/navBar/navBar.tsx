@@ -1,9 +1,6 @@
-import { Menu, MenuProps, Dropdown, Avatar, Spin } from 'antd';
 import React, { useEffect, useState } from 'react';
+import { Menu, MenuProps, Dropdown, Avatar, Spin, Row, Col } from 'antd';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Row, Col } from 'antd';
-// import { useSession } from '../../hooks/useSession'; // Custom hook for session management
-// import { getUserFromSession } from '../../utils/sessionUtils';
 
 export interface NavConfig {
   navBarTheme: 'light' | 'dark';
@@ -16,7 +13,7 @@ interface User {
   id: string;
   username: string;
   avatar?: string;
-  // Add any additional fields if needed
+  role: string;
 }
 
 const NavBar: React.FC<NavConfig> = (config) => {
@@ -33,7 +30,7 @@ const NavBar: React.FC<NavConfig> = (config) => {
       try {
         const parsedUser: User = JSON.parse(storedUser);
         setUser(parsedUser);
-        console.log("Parsed user from sessionStorage:", parsedUser);
+        console.log('Parsed user from sessionStorage:', parsedUser);
       } catch (error) {
         console.error('Error parsing sessionStorage user:', error);
         setUser(null);
@@ -56,56 +53,33 @@ const NavBar: React.FC<NavConfig> = (config) => {
     }
   };
 
-  // Menu items with Profile redirect based on userID from sessionStorage.
   const menuItems: MenuProps['items'] = [
-    {
-      key: 'profile',
-      label: 'Profile',
-      onClick: () => {
-        console.log("Profile clicked");
-        if (user && user.id) {
-          navigate(`/learnerProfile/${user.id}`);
-        }
-      },
-    },
+    ...(user && user.role.toLowerCase() === 'learner'
+      ? [
+        {
+          key: 'profile',
+          label: 'Profile',
+          onClick: () => {
+            navigate(`/learnerProfile`);
+          },
+        },
+      ]
+      : []),
+    ...(user && user.role.toLowerCase() === 'provider'
+      ? [
+        {
+          key: 'providerDashboard',
+          label: 'Dashboard',
+          onClick: () => navigate(`/providerDashboard`),
+        },
+      ]
+      : []),
     {
       key: 'logout',
       label: 'Logout',
       onClick: handleLogout,
     },
   ];
-
-  //shawn added
-  if (user && ((user as unknown) as { role: string }).role === 'provider') {
-    menuItems.splice(1, 0, 
-    // {
-    //   key: 'createcourse',
-    //   label: 'Create Course',
-    //   onClick: () => navigate('/createcourse'),
-    // },
-    // {
-    //   key: 'viewcourses',
-    //   label : 'View Courses',
-    //   onClick: () => navigate('/viewcourse')
-    // },
-    // {
-    //   key: 'deletcourses',
-    //   label : 'Delete Courses',
-    //   onClick: () => navigate('/deletecourse')
-    // },
-    // {
-    //   key: 'updatecourses',
-    //   label: 'Update Courses',
-    //   onClick: () => navigate('/updatecourse')
-    // },
-    // KC ADDED 23 Mar
-    {
-      key: 'providerDashboard',
-      label: 'Dashboard',
-      onClick: () => navigate(`/providerDashboard`) 
-    }
-  );
-  }
 
   return (
     <Spin spinning={isLoading || isLoggingOut} size="large">
@@ -123,7 +97,6 @@ const NavBar: React.FC<NavConfig> = (config) => {
 
         {/* Right Navigation */}
         <Col span={4} offset={7}>
-
           {user ? (
             <Dropdown menu={{ items: menuItems }} placement="bottomRight">
               <div
@@ -155,7 +128,6 @@ const NavBar: React.FC<NavConfig> = (config) => {
         </Col>
       </Row>
     </Spin>
-
   );
 };
 

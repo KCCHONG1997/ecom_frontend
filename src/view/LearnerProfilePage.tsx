@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useParams } from "react-router-dom";
 import {
   Layout,
   Card,
@@ -33,6 +32,11 @@ interface Certificate {
   issuedDate: string;
 }
 
+interface Badge {
+  id: number;
+  title: string;
+}
+
 interface User {
   cover_image_url: string;
   profile_image_url: string;
@@ -42,6 +46,7 @@ interface User {
   connections: number;
   recentlyLearnt: Course[];
   licensesAndCertificates: Certificate[];
+  badges?: Badge[];
   first_name: string;
   last_name: string;
   username: string;
@@ -51,39 +56,41 @@ interface User {
   user_id: number;
 }
 
-interface Badge {
-  id: number;
-  title: string;
-}
+const backendURL = "http://localhost:5000/";
+
+const cardStyle = {
+  boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.1)",
+  borderRadius: "8px",
+};
+
+const defaultCoverImage =
+  "https://dummyimage.com/1200x200/cccccc/000000.png?text=Default+Cover+Image";
+const defaultAvatar =
+  "https://dummyimage.com/150x150/cccccc/000000.png?text=No+Avatar";
 
 const LearnerProfile: React.FC = () => {
-  const { userID } = useParams<{ userID: string }>();
+  // Always call hooks at the top level.
   const [userData, setUserData] = useState<User | null>(null);
   const [badges, setBadges] = useState<Badge[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  
-  // State for editing "About Myself"
   const [editing, setEditing] = useState<boolean>(false);
   const [aboutText, setAboutText] = useState<string>("");
 
-  // Refs for file inputs
   const profileInputRef = useRef<HTMLInputElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
 
-  // Your backend base URL
-  const backendURL = "http://localhost:5000/";
-
-  // Retrieve logged-in user from sessionStorage
+  // Retrieve logged-in user from session storage.
   const loggedUser = JSON.parse(sessionStorage.getItem("user") || "null");
-  // isOwner is true if loggedUser is available and its user_id matches the profile's user_id
-  const isOwner = loggedUser && userData && loggedUser.id == userData.user_id;
-  console.log("loggedUser.id: ", loggedUser.id);
-  console.log("userData.user_id: ", userData?.user_id);
+  const userID = loggedUser?.id;
 
-  const fetchLearnerProfile = async (userID: string) => {
+  // Determine if this profile belongs to the logged-in user.
+  const isOwner = userData && loggedUser && loggedUser.id === userData.user_id;
+
+  const fetchLearnerProfile = async (id: number) => {
     try {
-      const response = await fetch(`http://localhost:${PORT}/api/learnerProfileData/${userID}`, {
+      console.log("id woiiiiiiiiiiiiiiii: ", id);
+      const response = await fetch(`http://localhost:${PORT}/api/learner-profiles/${id}`, {
         method: "GET",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -91,7 +98,7 @@ const LearnerProfile: React.FC = () => {
       const jsonData = await response.json();
       console.log(jsonData);
       if (!response.ok) {
-        throw new Error(`Failed to fetch user data: ${jsonData.error || "Unknown error"}`);
+        throw new Error(jsonData.error || "Unknown error");
       }
       // Ensure arrays are defined
       jsonData.recentlyLearnt = jsonData.recentlyLearnt || [];
@@ -99,34 +106,38 @@ const LearnerProfile: React.FC = () => {
       setUserData(jsonData);
       setBadges(jsonData.badges || []);
       setAboutText(jsonData.about_myself || "");
-      setLoading(false);
     } catch (err: any) {
       setError(err.message || "Error fetching user data.");
+    } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    if (!userID) {
-      setError("No user ID provided.");
+    // Only fetch profile if a valid userID exists.
+    if (userID) {
+      fetchLearnerProfile(userID);
+    } else {
+      setError("No logged-in user found.");
       setLoading(false);
-      return;
     }
-    fetchLearnerProfile(userID);
   }, [userID]);
 
   const updateAboutMyself = async () => {
     if (!userData) return;
     try {
-      const response = await fetch(`http://localhost:${PORT}/api/learnerProfileData/updateAbout`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          learner_id: userData.learner_id,
-          about_myself: aboutText,
-        }),
-      });
+      const response = await fetch(
+        `http://localhost:${PORT}/api/learnerProfileData/updateAbout`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            learner_id: userData.learner_id,
+            about_myself: aboutText,
+          }),
+        }
+      );
       const jsonData = await response.json();
       if (!response.ok) {
         message.error(`Update failed: ${jsonData.error || "Unknown error"}`);
@@ -137,7 +148,6 @@ const LearnerProfile: React.FC = () => {
       setEditing(false);
     } catch (err: any) {
       message.error("Error updating About Myself.");
-      console.error(err);
     }
   };
 
@@ -148,16 +158,21 @@ const LearnerProfile: React.FC = () => {
     formData.append("user_id", userData.user_id.toString());
     formData.append("type", type);
     try {
-      const response = await fetch(`http://localhost:${PORT}/api/learnerProfile/uploadImage`, {
-        method: "POST",
-        credentials: "include",
-        body: formData,
-      });
+      const response = await fetch(
+        `http://localhost:${PORT}/api/learnerProfileData/uploadImage`,
+        {
+          method: "POST",
+          credentials: "include",
+          body: formData,
+        }
+      );
       const jsonData = await response.json();
       if (!response.ok) {
         throw new Error(jsonData.error || "Upload failed");
       }
-      message.success(`${type === "profile" ? "Profile" : "Cover"} image uploaded successfully!`);
+      message.success(
+        `${type === "profile" ? "Profile" : "Cover"} image uploaded successfully!`
+      );
       if (type === "profile") {
         setUserData({ ...userData, profile_image_url: jsonData.filePath });
       } else {
@@ -168,50 +183,36 @@ const LearnerProfile: React.FC = () => {
     }
   };
 
-  const handleProfilePicClick = () => {
-    profileInputRef.current?.click();
-  };
-
-  const handleCoverPicClick = () => {
-    coverInputRef.current?.click();
-  };
-
-  const handleProfileFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    type: "profile" | "cover"
+  ) => {
     if (e.target.files && e.target.files[0]) {
-      uploadImage(e.target.files[0], "profile");
+      uploadImage(e.target.files[0], type);
     }
   };
 
-  const handleCoverFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      uploadImage(e.target.files[0], "cover");
-    }
-  };
+  // Format image URLs
+  const formatImageURL = (url: string) => `${backendURL}${url.replace(/\\/g, "/")}`;
 
+  // Render loading or error state if needed.
   if (loading) return <div>Loading...</div>;
-  if (error) return <div>Error: {error}</div>;
+  if (error)
+    return (
+      <div>
+        <Text type="danger">Error: {error}</Text>
+      </div>
+    );
   if (!userData) return <div>No user data found.</div>;
 
-  // Convert file paths to URL format with forward slashes and prepend backend URL
-  const formattedProfilePic = userData.profile_image_url.replace(/\\/g, '/');
-  const profileImageSrc = `${backendURL}${formattedProfilePic}`;
-  const formattedCoverPic = userData.cover_image_url.replace(/\\/g, '/');
-  const coverImageSrc = `${backendURL}${formattedCoverPic}`;
+  const finalCoverImage = userData.cover_image_url
+    ? formatImageURL(userData.cover_image_url)
+    : defaultCoverImage;
+  const finalProfileImage = userData.profile_image_url
+    ? formatImageURL(userData.profile_image_url)
+    : defaultAvatar;
 
-  const defaultCoverImage =
-    "https://dummyimage.com/1200x200/cccccc/000000.png?text=Default+Cover+Image";
-  const defaultAvatar =
-    "https://dummyimage.com/150x150/cccccc/000000.png?text=No+Avatar";
-  // Use the formatted URLs if available; otherwise fall back to default images
-  const finalCoverImage = userData.cover_image_url ? coverImageSrc : defaultCoverImage;
-  const finalProfileImage = userData.profile_image_url ? profileImageSrc : defaultAvatar;
-
-  const cardStyle = {
-    boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.1)",
-    borderRadius: "8px",
-  };
-
-  const fullName = `${userData.first_name || ""} ${userData.last_name || ""}`.trim();
+  const fullName = `${userData.first_name} ${userData.last_name}`.trim();
   const titleText =
     userData.occupation && userData.company_name
       ? `${userData.occupation} at ${userData.company_name}`
@@ -230,13 +231,13 @@ const LearnerProfile: React.FC = () => {
             />
             {isOwner && (
               <div style={{ position: "absolute", top: 8, right: 8 }}>
-                <Button onClick={handleCoverPicClick}>Change Cover</Button>
+                <Button onClick={() => coverInputRef.current?.click()}>Change Cover</Button>
                 <input
                   type="file"
                   accept="image/*"
                   style={{ display: "none" }}
                   ref={coverInputRef}
-                  onChange={handleCoverFileChange}
+                  onChange={(e) => handleFileChange(e, "cover")}
                 />
               </div>
             )}
@@ -248,8 +249,7 @@ const LearnerProfile: React.FC = () => {
               />
               {isOwner && (
                 <div style={{ marginTop: 8, textAlign: "center" }}>
-                  {/* Instead of a camera icon, we simply show a text link as before */}
-                  <Button onClick={handleProfilePicClick} type="link">
+                  <Button onClick={() => profileInputRef.current?.click()} type="link">
                     Change Profile Picture
                   </Button>
                   <input
@@ -257,7 +257,7 @@ const LearnerProfile: React.FC = () => {
                     accept="image/*"
                     style={{ display: "none" }}
                     ref={profileInputRef}
-                    onChange={handleProfileFileChange}
+                    onChange={(e) => handleFileChange(e, "profile")}
                   />
                 </div>
               )}
@@ -273,19 +273,24 @@ const LearnerProfile: React.FC = () => {
                 </Title>
                 <Text type="secondary">{titleText}</Text>
                 <div style={{ marginTop: 8 }}>
-                  <Text>{userData.email}</Text> &middot;{" "}
-                  <Text>{userData.phone_number}</Text>
+                  <Text>{userData.email}</Text> &middot; <Text>{userData.phone_number}</Text>
                 </div>
               </Col>
             </Row>
             <Divider />
 
-            {/* About Myself Section with Edit Icon */}
+            {/* About Myself Section */}
             <Row style={{ marginBottom: 16 }}>
               <Col span={24}>
                 <Card
                   title={
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                      }}
+                    >
                       <span>About Myself</span>
                       {isOwner && (
                         <EditOutlined onClick={() => setEditing(true)} style={{ cursor: "pointer" }} />
@@ -322,7 +327,6 @@ const LearnerProfile: React.FC = () => {
                 </Card>
               </Col>
             </Row>
-
             <Divider />
 
             <Row gutter={[16, 16]}>
@@ -368,9 +372,9 @@ const LearnerProfile: React.FC = () => {
               {/* Right Section: Badges */}
               <Col xs={24} lg={8}>
                 <Card title="Badges" style={cardStyle}>
-                  {badges && badges.length > 0 ? (
+                  {badges.length > 0 ? (
                     badges.map((badge) => (
-                      <Tag key={badge.id} color="geekblue" style={{ marginBottom: "8px", marginRight: "8px" }}>
+                      <Tag key={badge.id} style={{ marginBottom: "8px", marginRight: "8px" }}>
                         {badge.title}
                       </Tag>
                     ))
