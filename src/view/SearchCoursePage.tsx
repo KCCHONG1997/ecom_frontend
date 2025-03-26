@@ -4,6 +4,7 @@ import { ShoppingCartOutlined, StarOutlined, CheckCircleOutlined } from '@ant-de
 import moment from 'moment';
 import { showErrorMessage } from '../utils/messageUtils';
 import { useNavigate } from 'react-router-dom';
+import PORT from '../hooks/usePort';
 
 const { Content } = Layout;
 const { Title, Paragraph, Text } = Typography;
@@ -69,14 +70,14 @@ const SearchCoursePage: React.FC = () => {
     try {
       const internalCoursesPromise =
         pageToLoad === 1
-          ? fetch(`http://localhost:5000/api/getAllCourses?keyword=${encodeURIComponent(keyword)}`, {
+          ? fetch(`http://localhost:${PORT}/api/getAllCourses?keyword=${encodeURIComponent(keyword)}`, {
             method: 'GET',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include'
           }).then(res => res.json())
           : Promise.resolve({ data: [] });
       const externalCoursesPromise = fetch(
-        `http://localhost:5000/api/skillsfuture/courses?keyword=${encodeURIComponent(keyword)}&page=${pageToLoad}`,
+        `http://localhost:${PORT}/api/skillsfuture/courses?keyword=${encodeURIComponent(keyword)}&page=${pageToLoad}`,
         {
           method: 'GET',
           headers: { 'Content-Type': 'application/json' },

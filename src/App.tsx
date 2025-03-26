@@ -5,7 +5,6 @@ import { Provider } from 'react-redux';
 import store from './redux/store';
 import NavBar, { NavConfig } from './component/navBar/navBar';
 import HomePage from './view/HomePage';
-import ShoppingPage from './view/ShoppingPage';
 import NotFoundPage from './global/NotFoundPage';
 import LoginPage from './view/LoginPage';
 import RegisterationPage from './view/RegisterationPage';
@@ -15,9 +14,6 @@ import SearchCoursePage from './view/SearchCoursePage';
 import CheckoutPage from './view/CheckoutPage';
 import AdminManagementPage from './view/AdminManagementPage';
 import ProviderCreateCoursePage from './view/ProviderCreateCoursePage';
-import ProviderViewCoursePage from './view/ProviderViewCoursePage';
-import ProviderDeleteCoursePage from './view/ProviderDeleteCoursePage';
-import ProviderUpdateCoursePage from './view/ProviderUpdateCoursePage';
 import ProviderDashboard from './view/ProviderDashboard';
 import CourseDetailPage from './view/CourseDetailPage';
 import ForgetPasswordPage from './view/ForgetPasswordPage';
@@ -71,7 +67,6 @@ const App: FC = () => (
         <Content style={{ flex: 1, padding: '16px, 0px', overflow: 'hidden', }}> {/* Flex to fill remaining space */}
           <Routes>
             <Route path="/" element={<HomePage />} />
-            <Route path="/shopping" element={<ShoppingPage />} />
             {/* <Route path="/contactus" element={<ShoppingPage />} /> */}
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterationPage />} />
@@ -83,12 +78,8 @@ const App: FC = () => (
             <Route path="/forgetpassword" element={<ForgetPasswordPage />} />
             <Route path="/adminCreation" element={<AdminCreationPage />} />
             <Route path="/createcourse" element={<ProviderCreateCoursePage />} />
-            {/* <Route path="/viewcourse" element={<ProviderViewCoursePage />} />
-            <Route path="/deletecourse" element={<ProviderDeleteCoursePage/>} />
-            <Route path="/updatecourse" element={<ProviderUpdateCoursePage/>} /> */}
             <Route path="/providerDashboard" element={<ProviderDashboard/>} />
             <Route path="/course-detail/:id" element={<CourseDetailPage />} />
-            {/* <Route path="/providerDasboard" element={<ProviderDashboard/>} /> */}
             <Route path="/forgetpassword" element={<ForgetPasswordPage />} />
             <Route path="/adminCreation" element={<AdminCreationPage />} />
 
