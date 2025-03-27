@@ -16,7 +16,7 @@ const AdminCreationPage: React.FC = () => {
       const [firstName, ...rest] = values.name.trim().split(' ');
       const lastName = rest.join(' ');
 
-      const response = await fetch(`http://localhost:${PORT}/api/useraccounts`, {
+      const response = await fetch(`http://localhost:${PORT}/api/admin/data`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
