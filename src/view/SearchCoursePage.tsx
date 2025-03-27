@@ -32,9 +32,11 @@ export type Course = {
 };
 
 type Review = {
-  reviewId: string;
-  userId: string;
+  reviewId: number;
+  userId: number;
   userName: string;
+  courseId?: number;
+  externalReferenceNumber?: string;
   rating: number;
   comment: string;
   date: string;
@@ -134,6 +136,42 @@ const SearchCoursePage: React.FC = () => {
       }));
 
       const combinedCourses = [...internalCourses, ...externalCourses];
+
+      // Fetch reviews for internal courses
+      for (const course of combinedCourses) {
+        try {
+          let reviewsUrl;
+          if (course.source === 'internal' && course.courseId) {
+            reviewsUrl = `http://localhost:5000/api/courses/${course.courseId}/reviews`;
+          } else if (course.externalReferenceNumber) {
+            reviewsUrl = `http://localhost:5000/api/courses/reviews?externalReferenceNumber=${encodeURIComponent(course.externalReferenceNumber)}`;
+          } else {
+            continue; // Skip if no way to identify the course
+          }
+      
+          const reviewsResponse = await fetch(reviewsUrl, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include'
+          });
+          
+          if (reviewsResponse.ok) {
+            const reviewsData = await reviewsResponse.json();
+            course.reviews = reviewsData.map((review: any) => ({
+              reviewId: review.review_id,
+              userId: review.user_id,
+              userName: review.user_name || 'Anonymous User',
+              courseId: review.course_id,
+              externalReferenceNumber: review.external_reference_number,
+              rating: review.rating,
+              comment: review.comment,
+              date: review.created_at ? review.created_at.split('T')[0] : moment().format('YYYY-MM-DD')
+            }));
+          }
+        } catch (error) {
+          console.error('Error fetching reviews for course:', course.title, error);
+        }
+      }
 
       if (pageToLoad === 1) {
         setCoursesData(combinedCourses);
@@ -263,7 +301,8 @@ const SearchCoursePage: React.FC = () => {
       message.error('Unable to verify enrollment status. Please try again later.');
     }
   };
-  const handleSubmitReview = () => {
+  
+  const handleSubmitReview = async () => {
     if (!selectedCourse) return;
     
     if (userRating === 0) {
@@ -271,37 +310,87 @@ const SearchCoursePage: React.FC = () => {
       return;
     }
 
+    const userJson = sessionStorage.getItem('user');
+    if (!userJson) {
+      Modal.confirm({
+        title: 'Login Required',
+        content: 'You need to be logged in to write a review. Would you like to login now?',
+        okText: 'Login',
+        cancelText: 'Cancel',
+        onOk: () => {
+          navigate('/login');
+        }
+      });
+      return;
+    }
+    
+    const user = JSON.parse(userJson);
+    
     const newReview: Review = {
-      reviewId: `r${Date.now()}`,
-      userId: 'currentUser',
-      userName: 'Current User',
+      reviewId: 0, // This will be set by the database
+      userId: user.id,
+      userName: user.name || 'User',
+      courseId: selectedCourse.courseId,
+      externalReferenceNumber: selectedCourse.externalReferenceNumber,
       rating: userRating,
       comment: reviewComment,
       date: moment().format('YYYY-MM-DD')
     };
 
-    const updatedCourses = coursesData.map(course => {
-      if (course.externalReferenceNumber === selectedCourse.externalReferenceNumber) {
-        return {
-          ...course,
-          reviews: [...(course.reviews || []), newReview]
-        };
-      }
-      return course;
-    });
+    console.log('New review object:', newReview);
 
-    setCoursesData(updatedCourses);
-    
-    const updatedCourse = updatedCourses.find(c => c.externalReferenceNumber === selectedCourse.externalReferenceNumber);
-    if (updatedCourse) {
-      setSelectedCourse(updatedCourse);
+    try {
+      const endpoint = selectedCourse.courseId 
+        ? `http://localhost:5000/api/courses/${selectedCourse.courseId}/reviews`
+        : `http://localhost:5000/api/courses/reviews`;
+        
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: newReview.userId,
+          rating: newReview.rating,
+          comment: newReview.comment,
+          externalReferenceNumber: selectedCourse.externalReferenceNumber
+        }),
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to submit review');
+      }
+      
+      const result = await response.json();
+      newReview.reviewId = result.reviewId; // Use the ID from the database
+      
+      // Update the UI with the new review
+      const updatedCourses = coursesData.map(course => {
+        if (course.externalReferenceNumber === selectedCourse.externalReferenceNumber) {
+          return {
+            ...course,
+            reviews: [...(course.reviews || []), newReview]
+          };
+        }
+        return course;
+      });
+
+      setCoursesData(updatedCourses);
+      
+      const updatedCourse = updatedCourses.find(c => c.externalReferenceNumber === selectedCourse.externalReferenceNumber);
+      if (updatedCourse) {
+        setSelectedCourse(updatedCourse);
+      }
+      
+      setReviewModalVisible(false);
+      setUserRating(0);
+      setReviewComment('');
+      
+      message.success('Review submitted successfully');
+      
+    } catch (error) {
+      console.error('Error submitting review:', error);
+      message.error('Failed to submit review. Please try again later.');
     }
-    
-    setReviewModalVisible(false);
-    setUserRating(0);
-    setReviewComment('');
-    
-    message.success('Review submitted successfully');
   };
 
   const getAverageRating = (course: Course) => {
