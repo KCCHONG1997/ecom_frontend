@@ -77,11 +77,12 @@ const App: FC = () => (
             <Route path="/learnerProfile" element={<LearnerProfilePage />} />
             <Route path="/searchCourse" element={<SearchCoursePage />} />
             <Route path="/checkout" element={<CheckoutPage />} />
+            <Route path="/contactus" element={<ContactFeedbackPage />} />
             <Route path="/adminManagementPage" element={<AdminManagementPage />} />
             <Route path="/forgetpassword" element={<ForgetPasswordPage />} />
             <Route path="/adminCreation" element={<AdminCreationPage />} />
             <Route path="/createcourse" element={<ProviderCreateCoursePage />} />
-            <Route path="/providerDashboard" element={<ProviderDashboard/>} />
+            <Route path="/providerDashboard" element={<ProviderDashboard />} />
             <Route path="/course-detail/:id" element={<CourseDetailPage />} />
             <Route path="/forgetpassword" element={<ForgetPasswordPage />} />
             <Route path="/adminCreation" element={<AdminCreationPage />} />

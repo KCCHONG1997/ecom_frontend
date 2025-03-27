@@ -204,12 +204,12 @@ const SearchCoursePage: React.FC = () => {
   const handleEnroll = async (course: Course) => {
     // Redirect to SkillsFuture SG for external courses
     if (course.source === 'myskillsfuture') {
-      const externalUrl = course.url || 
+      const externalUrl = course.url ||
         `https://www.myskillsfuture.gov.sg/content/portal/en/training-exchange/course-directory/course-detail.html?courseReferenceNumber=${course.externalReferenceNumber}`;
       window.open(externalUrl, '_blank');
       return;
     }
-    
+
     // Check if user is logged in
     const userJson = sessionStorage.getItem('user');
     if (!userJson) {
@@ -224,41 +224,42 @@ const SearchCoursePage: React.FC = () => {
       });
       return;
     }
-    
+
     // User is logged in, parse the user data
     const user = JSON.parse(userJson);
-    
+
     // Ensure course has a valid ID
     if (!course.courseId) {
       message.error('Invalid course information');
       return;
     }
-    
+
     try {
-      const response = await fetch(`http://localhost:5000/api/courses/${course.courseId}/enrollment-check?userId=${user.id}`, {
+      const response = await fetch(`http://localhost:${PORT}/api/courses/${course.courseId}/enrollment-check?userId=${user.id}`, {
+        
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include'
       });
-      
+
       console.log('Response status:', response.status);
-      
+
       if (!response.ok) {
         throw new Error('Failed to verify enrollment status');
       }
-      
+
       const data = await response.json();
       console.log('Enrollment check data:', data);
-      
+
       if (data.isEnrolled === true) {
         console.log('User is already enrolled');
         message.info('You are already enrolled in this course');
         return;
       }
-      
+
       localStorage.setItem('selectedCourse', JSON.stringify(course));
       navigate('/checkout');
-      
+
     } catch (error) {
       console.error('Error checking enrollment status:', error);
       message.error('Unable to verify enrollment status. Please try again later.');
@@ -266,7 +267,7 @@ const SearchCoursePage: React.FC = () => {
   };
   const handleSubmitReview = () => {
     if (!selectedCourse) return;
-    
+
     if (userRating === 0) {
       message.error('Please provide a rating');
       return;
@@ -292,22 +293,22 @@ const SearchCoursePage: React.FC = () => {
     });
 
     setCoursesData(updatedCourses);
-    
+
     const updatedCourse = updatedCourses.find(c => c.externalReferenceNumber === selectedCourse.externalReferenceNumber);
     if (updatedCourse) {
       setSelectedCourse(updatedCourse);
     }
-    
+
     setReviewModalVisible(false);
     setUserRating(0);
     setReviewComment('');
-    
+
     message.success('Review submitted successfully');
   };
 
   const getAverageRating = (course: Course) => {
     if (!course.reviews || course.reviews.length === 0) return 0;
-    
+
     const sum = course.reviews.reduce((acc, review) => acc + review.rating, 0);
     return sum / course.reviews.length;
   };
@@ -405,8 +406,8 @@ const SearchCoursePage: React.FC = () => {
                         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                           <Text type="secondary">{course.provider}</Text>
                           <Text strong>
-                            {(Number(course.price) === 0 || !course.price) 
-                              ? 'Free' 
+                            {(Number(course.price) === 0 || !course.price)
+                              ? 'Free'
                               : `$${course.price}`}
                           </Text>
                         </div>
@@ -459,14 +460,14 @@ const SearchCoursePage: React.FC = () => {
               {selectedCourse ? (
                 <>
                   <Title level={2}>{selectedCourse.title}</Title>
-                  
+
                   {/* Price display */}
                   <Title level={4}>
-                    {(Number(selectedCourse.price) === 0 || !selectedCourse.price) 
-                      ? 'Free' 
+                    {(Number(selectedCourse.price) === 0 || !selectedCourse.price)
+                      ? 'Free'
                       : `$${selectedCourse.price}`}
                   </Title>
-                  
+
                   {/* SkillsFuture button for external courses */}
                   {selectedCourse.source === 'myskillsfuture' && (
                     <Button
@@ -483,7 +484,7 @@ const SearchCoursePage: React.FC = () => {
                       View on SkillsFuture SG
                     </Button>
                   )}
-                  
+
                   {/* Course image */}
                   {selectedCourse.detailImageURL && (
                     <img
@@ -492,13 +493,13 @@ const SearchCoursePage: React.FC = () => {
                       style={{ width: '100%', marginBottom: '16px' }}
                     />
                   )}
-                  
+
                   {/* Rating display */}
-                  <div style={{ 
-                    display: 'flex', 
-                    justifyContent: 'space-between', 
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
                     alignItems: 'center',
-                    marginBottom: '16px' 
+                    marginBottom: '16px'
                   }}>
                     <div style={{ display: 'flex', alignItems: 'center' }}>
                       <Rate disabled value={getAverageRating(selectedCourse)} />
@@ -506,28 +507,28 @@ const SearchCoursePage: React.FC = () => {
                         ({selectedCourse.reviews?.length || 0} reviews)
                       </Text>
                     </div>
-                    
+
                     {/* Enroll button */}
-                    <Button 
-                      type="primary" 
-                      size="large" 
-                      icon={selectedCourse.source === 'myskillsfuture' ? <CheckCircleOutlined /> : <ShoppingCartOutlined />} 
+                    <Button
+                      type="primary"
+                      size="large"
+                      icon={selectedCourse.source === 'myskillsfuture' ? <CheckCircleOutlined /> : <ShoppingCartOutlined />}
                       onClick={() => handleEnroll(selectedCourse)}
                     >
-                      {selectedCourse.source === 'myskillsfuture' 
-                        ? 'View on SkillsFuture' 
-                        : ((Number(selectedCourse.price) === 0 || !selectedCourse.price) 
-                          ? 'Enroll For Free' 
+                      {selectedCourse.source === 'myskillsfuture'
+                        ? 'View on SkillsFuture'
+                        : ((Number(selectedCourse.price) === 0 || !selectedCourse.price)
+                          ? 'Enroll For Free'
                           : 'Enroll Now')}
                     </Button>
                   </div>
-                  
+
                   {/* Tabs for course details */}
                   <Tabs defaultActiveKey="1">
                     <TabPane tab="Details" key="1">
                       <Paragraph><strong>Provider:</strong> {selectedCourse.provider}</Paragraph>
-                      <Paragraph><strong>Cost:</strong> {(Number(selectedCourse.price) === 0 || !selectedCourse.price) 
-                        ? 'Free' 
+                      <Paragraph><strong>Cost:</strong> {(Number(selectedCourse.price) === 0 || !selectedCourse.price)
+                        ? 'Free'
                         : `$${selectedCourse.price}`}</Paragraph>
                       <Paragraph><strong>Duration:</strong> {selectedCourse.duration || `${selectedCourse.totalTrainingHours} hours`}</Paragraph>
                       {selectedCourse.modeOfTrainings && selectedCourse.modeOfTrainings.length > 0 && (
@@ -549,14 +550,14 @@ const SearchCoursePage: React.FC = () => {
                     </TabPane>
                     <TabPane tab="Reviews" key="4">
                       {/* Reviews section */}
-                      <Button 
+                      <Button
                         style={{ marginBottom: '16px' }}
                         icon={<StarOutlined />}
                         onClick={() => setReviewModalVisible(true)}
                       >
                         Write a Review
                       </Button>
-                      
+
                       {selectedCourse.reviews && selectedCourse.reviews.length > 0 ? (
                         <List
                           itemLayout="vertical"
@@ -582,7 +583,7 @@ const SearchCoursePage: React.FC = () => {
                 </>
               ) : (
                 <Row justify="center" align="middle">
-                  <Col xs={20} lg={5} style={{ maxHeight: '100vh'}}>
+                  <Col xs={20} lg={5} style={{ maxHeight: '100vh' }}>
                     <Empty
                       image="https://gw.alipayobjects.com/zos/antfincdn/ZHrcdLPrvN/empty.svg"
                       description={
@@ -599,7 +600,7 @@ const SearchCoursePage: React.FC = () => {
           </Col>
         </Row>
       </Content>
-      
+
       {/* Review modal */}
       <Modal
         title="Write a Review"

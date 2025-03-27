@@ -89,7 +89,6 @@ const LearnerProfile: React.FC = () => {
 
   const fetchLearnerProfile = async (id: number) => {
     try {
-      console.log("id woiiiiiiiiiiiiiiii: ", id);
       const response = await fetch(`http://localhost:${PORT}/api/learner-profiles/${id}`, {
         method: "GET",
         headers: { "Content-Type": "application/json" },
