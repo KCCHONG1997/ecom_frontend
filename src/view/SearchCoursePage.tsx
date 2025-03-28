@@ -76,6 +76,8 @@ const SearchCoursePage: React.FC = () => {
             credentials: 'include'
           }).then(res => res.json())
           : Promise.resolve({ data: [] });
+
+      // External API call with 404 handling
       const externalCoursesPromise = fetch(
         `http://localhost:${PORT}/api/skillsfuture/courses?keyword=${encodeURIComponent(keyword)}&page=${pageToLoad}`,
         {
@@ -83,12 +85,23 @@ const SearchCoursePage: React.FC = () => {
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include'
         }
-      ).then(res => res.json());
+      ).then(async (res) => {
+        if (res.status === 404) {
+          return { data: { courses: [] } };
+        }
+        if (!res.ok) {
+          throw new Error(`External API error: ${res.status}`);
+        }
+        return res.json();
+      });
 
-      const internalData = await internalCoursesPromise;
-      const externalData = await externalCoursesPromise;
+      const [internalResult, externalResult] = await Promise.allSettled([
+        internalCoursesPromise,
+        externalCoursesPromise
+      ]);
 
-      console.log("externalData: ", externalData);
+      const internalData = internalResult.status === 'fulfilled' ? internalResult.value : { data: [] };
+      const externalData = externalResult.status === 'fulfilled' ? externalResult.value : { data: { courses: [] } };
 
       const internalCourses: Course[] = (internalData.data || []).map((course: any) => ({
         courseId: course.course_id,
@@ -147,12 +160,13 @@ const SearchCoursePage: React.FC = () => {
         });
       }
     } catch (error) {
+      console.error('Error fetching courses:', error);
       showErrorMessage('Failed to connect to the server.');
-      console.error('Error:', error);
     } finally {
       setIsLoading(false);
     }
   };
+
 
   useEffect(() => {
     setPage(1);
@@ -236,7 +250,7 @@ const SearchCoursePage: React.FC = () => {
 
     try {
       const response = await fetch(`http://localhost:${PORT}/api/courses/${course.courseId}/enrollment-check?userId=${user.id}`, {
-        
+
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include'

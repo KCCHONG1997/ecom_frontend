@@ -88,6 +88,8 @@ const RegistrationPage: React.FC = () => {
         body: JSON.stringify({
           username: values.username,
           email: values.email,
+          firstName: values.firstName,
+          lastName: values.lastName,
           password: values.password,
           role: 'provider',
           phone_number: values.phoneNumber,
@@ -162,12 +164,12 @@ const RegistrationPage: React.FC = () => {
         >
           <Input placeholder="Enter your email" />
         </Form.Item>
-        <Form.Item label="LectureTeam ID" name="lectureTeamID">
+        {/* <Form.Item label="LectureTeam ID" name="lectureTeamID">
           <Input
             placeholder="Enter your LectureTeam ID"
             addonAfter={<Button icon={<SearchOutlined />} />}
           />
-        </Form.Item>
+        </Form.Item> */}
         <Form.Item
           name="organization"
           label="Organization Name"

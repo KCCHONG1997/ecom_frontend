@@ -68,6 +68,13 @@ const NavBar: React.FC<NavConfig> = (config) => {
             navigate(`/learnerProfile`);
           },
         },
+        {
+          key: 'learnerDashboard',
+          label: 'Learner Dashboard',
+          onClick: () => {
+            navigate(`/LearnerDashboard`);
+          },
+        }
       ]
       : []),
     ...(user && user.role.toLowerCase() === 'provider'

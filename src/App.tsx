@@ -18,6 +18,8 @@ import ProviderDashboard from './view/ProviderDashboard';
 import CourseDetailPage from './view/CourseDetailPage';
 import ForgetPasswordPage from './view/ForgetPasswordPage';
 import AdminCreationPage from './view/AdminCreationPage';
+import LearnerDashboard from './view/LearnerDashboard';
+import CourseModuleDetailPage from './view/CourseModuleDetailPage';
 
 const { Header, Footer, Content } = Layout;
 
@@ -86,6 +88,8 @@ const App: FC = () => (
             <Route path="/course-detail/:id" element={<CourseDetailPage />} />
             <Route path="/forgetpassword" element={<ForgetPasswordPage />} />
             <Route path="/adminCreation" element={<AdminCreationPage />} />
+            <Route path="/LearnerDashboard" element={<LearnerDashboard />} />
+            <Route path="/course-module-detail/:enrollmentId" element={<CourseModuleDetailPage />} />
 
             <Route path="*" element={<NotFoundPage />} />
           </Routes>

@@ -6,7 +6,6 @@ interface User {
   username: string;
   avatar?: string;
   id?: number;
-  //shawn added
   role: string;
 }
 
