@@ -12,8 +12,7 @@ import {
     Table,
     Modal,
     Input,
-    InputNumber,
-    Select
+    InputNumber
 } from 'antd';
 import { useParams } from 'react-router-dom';
 import { UserOutlined } from '@ant-design/icons';
@@ -51,24 +50,6 @@ interface CourseReview {
     rating: number;
     comment: string;
     created_at: string;
-}
-
-interface Enrollment {
-    enrollment_id: number;
-    course_id: number;
-    completion_percentage: string;
-    is_kicked: number;
-    enrolled_at: string;
-    user_id: number;
-    username: string;
-    email: string;
-    first_name: string;
-    last_name: string;
-    cover_image_url?: string;
-    profile_image_url?: string;
-    occupation?: string;
-    company_name?: string;
-    course_name: string;
 }
 
 const { Header, Content } = Layout;
@@ -109,6 +90,7 @@ const CourseDetailPage: React.FC = () => {
                 message.error(data.error || 'Failed to fetch course details');
             }
         } catch (error) {
+            console.error('Error fetching course details:', error);
             message.error('Failed to fetch course details');
         } finally {
             setLoading(false);
@@ -118,7 +100,9 @@ const CourseDetailPage: React.FC = () => {
     // GET fetch: Retrieve modules for the course
     const fetchModules = async (courseId: number) => {
         try {
-            const response = await fetch(`http://localhost:5000/api/courseModules?course_id=${courseId}`, { method: 'GET' });
+            const response = await fetch(`http://localhost:5000/api/courseModules?course_id=${courseId}`, {
+                method: 'GET'
+            });
             const data = await response.json();
             if (response.ok) {
                 setModules(data.data);
@@ -126,6 +110,7 @@ const CourseDetailPage: React.FC = () => {
                 message.error(data.error || 'Failed to fetch course modules');
             }
         } catch (error) {
+            console.error('Error fetching course modules:', error);
             message.error('Failed to fetch course modules');
         }
     };
@@ -133,15 +118,18 @@ const CourseDetailPage: React.FC = () => {
     // GET fetch: Retrieve reviews for the course
     const fetchReviews = async (courseId: number) => {
         try {
-            // FIXME: COURSE REVIEW API NOT SETUP
-            const response = await fetch(`http://localhost:5000/api/<WHATREVIEW>?course_id=${courseId}`, { method: 'GET' });
+            const response = await fetch(`http://localhost:5000/api/courses/${courseId}/reviews`, {
+                method: 'GET'
+            });
             const data = await response.json();
             if (response.ok) {
-                setReviews(data.data);
+                // If your API returns an array of reviews directly
+                setReviews(data);
             } else {
                 message.error(data.error || 'Failed to fetch course reviews');
             }
         } catch (error) {
+            console.error('Error fetching course reviews:', error);
             message.error('Failed to fetch course reviews');
         }
     };
@@ -153,7 +141,7 @@ const CourseDetailPage: React.FC = () => {
         try {
             const payload = { ...values, course_id: course.course_id };
             const response = await fetch(`http://localhost:5000/api/courseModule`, {
-                method: 'POST', // Explicitly using POST
+                method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),
             });
@@ -181,7 +169,7 @@ const CourseDetailPage: React.FC = () => {
         try {
             const payload = { ...values, course_id: course.course_id };
             const response = await fetch(`http://localhost:5000/api/courseModule/${selectedModule.module_id}`, {
-                method: 'PUT', // Explicitly using PUT
+                method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),
             });
@@ -246,10 +234,12 @@ const CourseDetailPage: React.FC = () => {
                     const data = await response.json();
                     if (response.ok) {
                         message.success('Course deleted successfully');
+                        // Possibly navigate away or reload
                     } else {
                         message.error(data.error || 'Failed to delete course');
                     }
                 } catch (error) {
+                    console.error('Error deleting course:', error);
                     message.error('Failed to delete course');
                 }
             },
@@ -288,34 +278,6 @@ const CourseDetailPage: React.FC = () => {
         { title: 'Comment', dataIndex: 'comment', key: 'comment' },
         { title: 'Date', dataIndex: 'created_at', key: 'created_at' },
     ];
-
-    // const columnsCourses = [
-    //     {
-    //         title: 'Course ID',
-    //         dataIndex: 'course_id',
-    //         key: 'course_id',
-    //     },
-    //     {
-    //         title: 'Course Title',
-    //         dataIndex: 'name',
-    //         key: 'name',
-    //         render: (text: string) => <a>{text}</a>,
-    //     },
-    //     {
-    //         title: 'Actions',
-    //         key: 'actions',
-    //         render: (_: any, record: Course) => (
-    //             <>
-    //                 <Button type="primary" style={{ marginRight: 8 }} onClick={() => setUpdateModalOpen(true)}>
-    //                     Update
-    //                 </Button>
-    //                 <Button danger onClick={() => handleDeleteCourse(record.course_id)}>
-    //                     Delete
-    //                 </Button>
-    //             </>
-    //         ),
-    //     },
-    // ];
 
     return (
         <Layout style={{ minHeight: '100vh', background: '#f0f2f5' }}>
@@ -384,20 +346,40 @@ const CourseDetailPage: React.FC = () => {
                                 </Card>
                             </Col>
                         </Row>
+
+                        {/* Modules */}
                         <Card title="Course Modules" bordered={false} style={{ marginTop: '24px', padding: '24px' }}>
-                            <Button type="primary" onClick={() => setAddModuleModalOpen(true)} style={{ marginBottom: '16px' }}>
+                            <Button
+                                type="primary"
+                                onClick={() => setAddModuleModalOpen(true)}
+                                style={{ marginBottom: '16px' }}
+                            >
                                 Add Module
                             </Button>
-                            <Table rowKey="module_id" dataSource={modules} columns={columnsModules} pagination={false} />
+                            <Table
+                                rowKey="module_id"
+                                dataSource={modules}
+                                columns={columnsModules}
+                                pagination={false}
+                            />
                         </Card>
+
+                        {/* Reviews */}
                         <Card title="Course Reviews" bordered={false} style={{ marginTop: '24px', padding: '24px' }}>
-                            <Table rowKey="review_id" dataSource={reviews} columns={columnsReviews} pagination={false} />
+                            <Table
+                                rowKey="review_id"
+                                dataSource={reviews}
+                                columns={columnsReviews}
+                                pagination={false}
+                            />
                         </Card>
                     </>
                 ) : (
                     <div>No course data found.</div>
                 )}
             </Content>
+
+            {/* ProviderUpdate Modal */}
             <ProviderUpdate
                 open={updateModalOpen}
                 loading={loading}
@@ -407,7 +389,8 @@ const CourseDetailPage: React.FC = () => {
                 }}
                 onFinish={handleUpdateSubmit}
             />
-            {/* Modal for Adding Course Module */}
+
+            {/* Add Module Modal */}
             <Modal
                 open={addModuleModalOpen}
                 title="Add Course Module"
@@ -455,6 +438,8 @@ const CourseDetailPage: React.FC = () => {
                     </Form.Item>
                 </Form>
             </Modal>
+
+            {/* Edit Module Modal */}
             <ModuleEditForm
                 open={editModuleModalOpen}
                 loading={loading}
