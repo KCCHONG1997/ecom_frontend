@@ -111,7 +111,7 @@ const CheckoutPage: React.FC = () => {
       }
       
       localStorage.setItem('enrollmentComplete', 'true');
-      message.success('Successfully enrolled in course!');
+      message.success('Successfully enrolled in course! A receipt has been sent to your email.');
       
     } catch (error) {
       console.error('Error enrolling in course:', error);
