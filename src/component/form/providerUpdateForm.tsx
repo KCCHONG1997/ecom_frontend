@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
-import { Modal, Form, Input, InputNumber, Select, Button } from 'antd';
+import { Modal, Form, Input, InputNumber, Select, Button, Upload } from 'antd';
+import { UploadOutlined } from '@ant-design/icons';
 
 interface ProviderUpdateProps {
   open: boolean;
@@ -8,6 +9,12 @@ interface ProviderUpdateProps {
   onCancel: () => void;
   onFinish: (values: any) => void;
 }
+
+const dummyRequest = ({ onSuccess }: any) => {
+  setTimeout(() => {
+    onSuccess("ok");
+  }, 0);
+};
 
 const ProviderUpdate: React.FC<ProviderUpdateProps> = ({ open, loading, initialValues, onCancel, onFinish }) => {
   const [form] = Form.useForm();
@@ -68,7 +75,7 @@ const ProviderUpdate: React.FC<ProviderUpdateProps> = ({ open, loading, initialV
         >
           <Input placeholder="Enter category" />
         </Form.Item>
-        <Form.Item
+        {/* <Form.Item
           name="source"
           label="Course Source"
           rules={[{ required: true, message: 'Please select course source!' }]}
@@ -80,11 +87,11 @@ const ProviderUpdate: React.FC<ProviderUpdateProps> = ({ open, loading, initialV
         </Form.Item>
         <Form.Item name="external_reference_number" label="External Reference Number">
           <Input placeholder="Enter external reference number" />
-        </Form.Item>
+        </Form.Item> */}
         <Form.Item
           name="training_provider_alias"
           label="Training Provider Alias"
-          rules={[{ required: true, message: 'Please input provider alias!' }]}
+        // rules={[{ required: true, message: 'Please input provider alias!' }]}
         >
           <Input placeholder="Enter training provider alias" />
         </Form.Item>
@@ -95,19 +102,23 @@ const ProviderUpdate: React.FC<ProviderUpdateProps> = ({ open, loading, initialV
         >
           <InputNumber min={1} style={{ width: '100%' }} />
         </Form.Item>
-        <Form.Item
+        {/* <Form.Item
           name="total_cost"
           label="Total Cost (SGD)"
           rules={[{ required: true, message: 'Please input total cost!' }]}
         >
           <InputNumber min={0} style={{ width: '100%' }} />
-        </Form.Item>
+        </Form.Item> */}
         <Form.Item
           name="tile_image_url"
-          label="Tile Image URL"
-          rules={[{ required: true, message: 'Please input image URL!' }]}
+          label="Course Image"
+          valuePropName="fileList"
+          extra="Upload course image"
+        // rules={[{ required: true, message: 'Please upload course image!' }]}
         >
-          <Input placeholder="Enter image URL (e.g., https://example.com/image.jpg)" />
+          <Upload customRequest={dummyRequest} listType="picture">
+            <Button icon={<UploadOutlined />}>Click to Upload</Button>
+          </Upload>
         </Form.Item>
         <Form.Item>
           <Button type="primary" htmlType="submit" loading={loading}>
