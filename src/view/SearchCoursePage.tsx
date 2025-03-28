@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Layout, Row, Col, Input, Card, Typography, List, Select, DatePicker, Spin, Button, Tag, Tabs, Empty, Rate, Modal, message } from 'antd';
-import { ShoppingCartOutlined, StarOutlined, CheckCircleOutlined } from '@ant-design/icons';
+import { ShoppingCartOutlined, StarOutlined, CheckCircleOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import moment from 'moment';
 import { showErrorMessage } from '../utils/messageUtils';
 import { useNavigate } from 'react-router-dom';
@@ -33,9 +33,11 @@ export type Course = {
 };
 
 type Review = {
-  reviewId: string;
-  userId: string;
+  reviewId: number;
+  userId: number;
   userName: string;
+  courseId?: number;
+  externalReferenceNumber?: string;
   rating: number;
   comment: string;
   date: string;
@@ -49,6 +51,10 @@ const SearchCoursePage: React.FC = () => {
   const [reviewModalVisible, setReviewModalVisible] = useState(false);
   const [userRating, setUserRating] = useState(0);
   const [reviewComment, setReviewComment] = useState('');
+  const [editReviewModalVisible, setEditReviewModalVisible] = useState(false);
+  const [editingReview, setEditingReview] = useState<Review | null>(null);
+  const [editReviewRating, setEditReviewRating] = useState(0);
+  const [editReviewComment, setEditReviewComment] = useState('');
 
   const [filterText, setFilterText] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | undefined>(undefined);
@@ -60,11 +66,8 @@ const SearchCoursePage: React.FC = () => {
   const [keyword, setKeyword] = useState<string>('business');
 
   const [page, setPage] = useState<number>(1);
-  // const pageSize = 15;
-
   const [hoverLoadMore, setHoverLoadMore] = useState<boolean>(false);
 
-  // Combined fetch: fetch internal courses (only on page 1) and external courses per page.
   const fetchCombinedCourses = async (pageToLoad: number) => {
     setIsLoading(true);
     try {
@@ -149,6 +152,41 @@ const SearchCoursePage: React.FC = () => {
 
       const combinedCourses = [...internalCourses, ...externalCourses];
 
+      for (const course of combinedCourses) {
+        try {
+          let reviewsUrl;
+          if (course.source === 'internal' && course.courseId) {
+            reviewsUrl = `http://localhost:5000/api/courses/${course.courseId}/reviews`;
+          } else if (course.externalReferenceNumber) {
+            reviewsUrl = `http://localhost:5000/api/courses/reviews?externalReferenceNumber=${encodeURIComponent(course.externalReferenceNumber)}`;
+          } else {
+            continue;
+          }
+      
+          const reviewsResponse = await fetch(reviewsUrl, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include'
+          });
+          
+          if (reviewsResponse.ok) {
+            const reviewsData = await reviewsResponse.json();
+            course.reviews = reviewsData.map((review: any) => ({
+              reviewId: review.review_id,
+              userId: review.user_id,
+              userName: review.user_name || 'Anonymous User',
+              courseId: review.course_id,
+              externalReferenceNumber: review.external_reference_number,
+              rating: review.rating,
+              comment: review.comment,
+              date: review.created_at ? review.created_at.split('T')[0] : moment().format('YYYY-MM-DD')
+            }));
+          }
+        } catch (error) {
+          console.error('Error fetching reviews for course:', course.title, error);
+        }
+      }
+
       if (pageToLoad === 1) {
         setCoursesData(combinedCourses);
       } else {
@@ -216,7 +254,6 @@ const SearchCoursePage: React.FC = () => {
   };
 
   const handleEnroll = async (course: Course) => {
-    // Redirect to SkillsFuture SG for external courses
     if (course.source === 'myskillsfuture') {
       const externalUrl = course.url ||
         `https://www.myskillsfuture.gov.sg/content/portal/en/training-exchange/course-directory/course-detail.html?courseReferenceNumber=${course.externalReferenceNumber}`;
@@ -224,7 +261,6 @@ const SearchCoursePage: React.FC = () => {
       return;
     }
 
-    // Check if user is logged in
     const userJson = sessionStorage.getItem('user');
     if (!userJson) {
       Modal.confirm({
@@ -239,10 +275,8 @@ const SearchCoursePage: React.FC = () => {
       return;
     }
 
-    // User is logged in, parse the user data
     const user = JSON.parse(userJson);
 
-    // Ensure course has a valid ID
     if (!course.courseId) {
       message.error('Invalid course information');
       return;
@@ -256,17 +290,13 @@ const SearchCoursePage: React.FC = () => {
         credentials: 'include'
       });
 
-      console.log('Response status:', response.status);
-
       if (!response.ok) {
         throw new Error('Failed to verify enrollment status');
       }
 
       const data = await response.json();
-      console.log('Enrollment check data:', data);
 
       if (data.isEnrolled === true) {
-        console.log('User is already enrolled');
         message.info('You are already enrolled in this course');
         return;
       }
@@ -279,7 +309,124 @@ const SearchCoursePage: React.FC = () => {
       message.error('Unable to verify enrollment status. Please try again later.');
     }
   };
-  const handleSubmitReview = () => {
+  
+  const hasUserReviewed = (course: Course) => {
+    const userJson = sessionStorage.getItem('user');
+    if (!userJson) return false;
+    
+    const user = JSON.parse(userJson);
+    return course.reviews?.some(review => review.userId === user.id);
+  };
+
+  const handleEditReview = (review: Review) => {
+    setEditingReview(review);
+    setEditReviewRating(review.rating);
+    setEditReviewComment(review.comment);
+    setEditReviewModalVisible(true);
+  };
+
+  const handleUpdateReview = async () => {
+    if (!editingReview) return;
+
+    try {
+      const response = await fetch(`http://localhost:5000/api/courses/reviews/${editingReview.reviewId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          rating: editReviewRating,
+          comment: editReviewComment
+        }),
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update review');
+      }
+
+      const updatedCourses = coursesData.map(course => {
+        if (course.externalReferenceNumber === selectedCourse?.externalReferenceNumber) {
+          const updatedReviews = course.reviews?.map(review => {
+            if (review.reviewId === editingReview.reviewId) {
+              return {
+                ...review,
+                rating: editReviewRating,
+                comment: editReviewComment
+              };
+            }
+            return review;
+          });
+          return { ...course, reviews: updatedReviews };
+        }
+        return course;
+      });
+
+      setCoursesData(updatedCourses);
+      
+      if (selectedCourse) {
+        const updatedCourse = updatedCourses.find(
+          c => c.externalReferenceNumber === selectedCourse.externalReferenceNumber
+        );
+        if (updatedCourse) {
+          setSelectedCourse(updatedCourse);
+        }
+      }
+
+      setEditReviewModalVisible(false);
+      message.success('Review updated successfully');
+    } catch (error) {
+      console.error('Error updating review:', error);
+      message.error('Failed to update review. Please try again later.');
+    }
+  };
+
+  const handleDeleteReview = async (reviewId: number) => {
+    Modal.confirm({
+      title: 'Delete Review',
+      content: 'Are you sure you want to delete this review? This action cannot be undone.',
+      okText: 'Delete',
+      okType: 'danger',
+      cancelText: 'Cancel',
+      onOk: async () => {
+        try {
+          const response = await fetch(`http://localhost:5000/api/courses/reviews/${reviewId}`, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include'
+          });
+
+          if (!response.ok) {
+            throw new Error('Failed to delete review');
+          }
+
+          const updatedCourses = coursesData.map(course => {
+            if (course.externalReferenceNumber === selectedCourse?.externalReferenceNumber) {
+              const updatedReviews = course.reviews?.filter(review => review.reviewId !== reviewId);
+              return { ...course, reviews: updatedReviews };
+            }
+            return course;
+          });
+
+          setCoursesData(updatedCourses);
+          
+          if (selectedCourse) {
+            const updatedCourse = updatedCourses.find(
+              c => c.externalReferenceNumber === selectedCourse.externalReferenceNumber
+            );
+            if (updatedCourse) {
+              setSelectedCourse(updatedCourse);
+            }
+          }
+
+          message.success('Review deleted successfully');
+        } catch (error) {
+          console.error('Error deleting review:', error);
+          message.error('Failed to delete review. Please try again later.');
+        }
+      }
+    });
+  };
+
+  const handleSubmitReview = async () => {
     if (!selectedCourse) return;
 
     if (userRating === 0) {
@@ -287,37 +434,89 @@ const SearchCoursePage: React.FC = () => {
       return;
     }
 
+    const userJson = sessionStorage.getItem('user');
+    if (!userJson) {
+      Modal.confirm({
+        title: 'Login Required',
+        content: 'You need to be logged in to write a review. Would you like to login now?',
+        okText: 'Login',
+        cancelText: 'Cancel',
+        onOk: () => {
+          navigate('/login');
+        }
+      });
+      return;
+    }
+    
+    const user = JSON.parse(userJson);
+    
+    if (hasUserReviewed(selectedCourse)) {
+      message.error('You have already reviewed this course. You can edit your existing review instead.');
+      return;
+    }
+    
     const newReview: Review = {
-      reviewId: `r${Date.now()}`,
-      userId: 'currentUser',
-      userName: 'Current User',
+      reviewId: 0,
+      userId: user.id,
+      userName: user.username || 'User',
+      courseId: selectedCourse.courseId,
+      externalReferenceNumber: selectedCourse.externalReferenceNumber,
       rating: userRating,
       comment: reviewComment,
       date: moment().format('YYYY-MM-DD')
     };
 
-    const updatedCourses = coursesData.map(course => {
-      if (course.externalReferenceNumber === selectedCourse.externalReferenceNumber) {
-        return {
-          ...course,
-          reviews: [...(course.reviews || []), newReview]
-        };
+    try {
+      const endpoint = selectedCourse.courseId 
+        ? `http://localhost:5000/api/courses/${selectedCourse.courseId}/reviews`
+        : `http://localhost:5000/api/courses/reviews`;
+        
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: newReview.userId,
+          rating: newReview.rating,
+          comment: newReview.comment,
+          externalReferenceNumber: selectedCourse.externalReferenceNumber
+        }),
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to submit review');
       }
-      return course;
-    });
+      
+      const result = await response.json();
+      newReview.reviewId = result.reviewId;
+      
+      const updatedCourses = coursesData.map(course => {
+        if (course.externalReferenceNumber === selectedCourse.externalReferenceNumber) {
+          return {
+            ...course,
+            reviews: [...(course.reviews || []), newReview]
+          };
+        }
+        return course;
+      });
 
-    setCoursesData(updatedCourses);
-
-    const updatedCourse = updatedCourses.find(c => c.externalReferenceNumber === selectedCourse.externalReferenceNumber);
-    if (updatedCourse) {
-      setSelectedCourse(updatedCourse);
+      setCoursesData(updatedCourses);
+      
+      const updatedCourse = updatedCourses.find(c => c.externalReferenceNumber === selectedCourse.externalReferenceNumber);
+      if (updatedCourse) {
+        setSelectedCourse(updatedCourse);
+      }
+      
+      setReviewModalVisible(false);
+      setUserRating(0);
+      setReviewComment('');
+      
+      message.success('Review submitted successfully');
+      
+    } catch (error) {
+      console.error('Error submitting review:', error);
+      message.error('Failed to submit review. Please try again later.');
     }
-
-    setReviewModalVisible(false);
-    setUserRating(0);
-    setReviewComment('');
-
-    message.success('Review submitted successfully');
   };
 
   const getAverageRating = (course: Course) => {
@@ -327,11 +526,23 @@ const SearchCoursePage: React.FC = () => {
     return sum / course.reviews.length;
   };
 
+  // Function to sort reviews so user's review is first
+  const sortReviews = (reviews: Review[]) => {
+    const userJson = sessionStorage.getItem('user');
+    if (!userJson) return reviews;
+    
+    const user = JSON.parse(userJson);
+    return [...reviews].sort((a, b) => {
+      if (a.userId === user.id) return -1;
+      if (b.userId === user.id) return 1;
+      return 0;
+    });
+  };
+
   return (
     <Layout style={{ minHeight: '100vh', background: '#f0f2f5', marginLeft: 'auto', marginRight: 'auto' }}>
       <Content style={{ padding: '24px' }}>
         <Row gutter={[16, 16]} justify="center" align="top">
-          {/* Left side: Filter controls and course list */}
           <Col xs={20} lg={5} style={{ maxHeight: '100vh', overflowY: 'auto' }}>
             <Card title="Filter Courses" bordered={false}>
               <Search
@@ -449,7 +660,6 @@ const SearchCoursePage: React.FC = () => {
                     </List.Item>
                   )}
                 />
-                {/* Always show clickable Load More text */}
                 <div
                   onClick={handleLoadMore}
                   onMouseEnter={() => setHoverLoadMore(true)}
@@ -468,38 +678,18 @@ const SearchCoursePage: React.FC = () => {
             )}
           </Col>
 
-          {/* Right side: Course details with tabs */}
           <Col xs={24} lg={16}>
             <Card bordered={false} style={{ minHeight: '80vh', padding: '24px' }}>
               {selectedCourse ? (
                 <>
                   <Title level={2}>{selectedCourse.title}</Title>
 
-                  {/* Price display */}
                   <Title level={4}>
                     {(Number(selectedCourse.price) === 0 || !selectedCourse.price)
                       ? 'Free'
                       : `$${selectedCourse.price}`}
                   </Title>
 
-                  {/* SkillsFuture button for external courses */}
-                  {selectedCourse.source === 'myskillsfuture' && (
-                    <Button
-                      type="primary"
-                      ghost
-                      onClick={() =>
-                        window.open(
-                          `https://www.myskillsfuture.gov.sg/content/portal/en/training-exchange/course-directory/course-detail.html?courseReferenceNumber=${selectedCourse.externalReferenceNumber}`,
-                          '_blank'
-                        )
-                      }
-                      style={{ marginTop: 15, marginBottom: 15 }}
-                    >
-                      View on SkillsFuture SG
-                    </Button>
-                  )}
-
-                  {/* Course image */}
                   {selectedCourse.detailImageURL && (
                     <img
                       src={selectedCourse.detailImageURL}
@@ -508,7 +698,6 @@ const SearchCoursePage: React.FC = () => {
                     />
                   )}
 
-                  {/* Rating display */}
                   <div style={{
                     display: 'flex',
                     justifyContent: 'space-between',
@@ -522,7 +711,6 @@ const SearchCoursePage: React.FC = () => {
                       </Text>
                     </div>
 
-                    {/* Enroll button */}
                     <Button
                       type="primary"
                       size="large"
@@ -537,7 +725,6 @@ const SearchCoursePage: React.FC = () => {
                     </Button>
                   </div>
 
-                  {/* Tabs for course details */}
                   <Tabs defaultActiveKey="1">
                     <TabPane tab="Details" key="1">
                       <Paragraph><strong>Provider:</strong> {selectedCourse.provider}</Paragraph>
@@ -563,31 +750,60 @@ const SearchCoursePage: React.FC = () => {
                       <Paragraph>{selectedCourse.objective || "No objective provided."}</Paragraph>
                     </TabPane>
                     <TabPane tab="Reviews" key="4">
-                      {/* Reviews section */}
-                      <Button
-                        style={{ marginBottom: '16px' }}
-                        icon={<StarOutlined />}
-                        onClick={() => setReviewModalVisible(true)}
-                      >
-                        Write a Review
-                      </Button>
+                      {/* Reviews section - only show Write Review button if user hasn't reviewed yet */}
+                      {!hasUserReviewed(selectedCourse) && (
+                        <Button
+                          style={{ marginBottom: '16px' }}
+                          icon={<StarOutlined />}
+                          onClick={() => setReviewModalVisible(true)}
+                        >
+                          Write a Review
+                        </Button>
+                      )}
 
                       {selectedCourse.reviews && selectedCourse.reviews.length > 0 ? (
                         <List
                           itemLayout="vertical"
-                          dataSource={selectedCourse.reviews}
-                          renderItem={(review) => (
-                            <List.Item>
-                              <div style={{ marginBottom: '8px' }}>
-                                <Text strong>{review.userName}</Text>
-                                <Text type="secondary" style={{ marginLeft: '8px' }}>
-                                  {review.date}
-                                </Text>
-                              </div>
-                              <Rate disabled value={review.rating} />
-                              <Paragraph>{review.comment}</Paragraph>
-                            </List.Item>
-                          )}
+                          dataSource={sortReviews(selectedCourse.reviews)}
+                          renderItem={(review) => {
+                            // Check if this review belongs to the current user
+                            const userJson = sessionStorage.getItem('user');
+                            const isUserReview = userJson ? JSON.parse(userJson).id === review.userId : false;
+
+                            return (
+                              <List.Item 
+                                actions={isUserReview ? [
+                                  <Button 
+                                    icon={<EditOutlined />} 
+                                    size="small" 
+                                    onClick={() => handleEditReview(review)}
+                                  >
+                                    Edit
+                                  </Button>,
+                                  <Button 
+                                    icon={<DeleteOutlined />} 
+                                    size="small" 
+                                    danger 
+                                    onClick={() => handleDeleteReview(review.reviewId)}
+                                  >
+                                    Delete
+                                  </Button>
+                                ] : []}
+                              >
+                                <div style={{ marginBottom: '8px' }}>
+                                  <Text strong>{review.userName}</Text>
+                                  <Text type="secondary" style={{ marginLeft: '8px' }}>
+                                    {review.date}
+                                  </Text>
+                                  {isUserReview && (
+                                    <Tag color="blue" style={{ marginLeft: '8px' }}>Your Review</Tag>
+                                  )}
+                                </div>
+                                <Rate disabled value={review.rating} />
+                                <Paragraph>{review.comment}</Paragraph>
+                              </List.Item>
+                            );
+                          }}
                         />
                       ) : (
                         <Paragraph>No reviews yet. Be the first to review this course!</Paragraph>
@@ -615,7 +831,6 @@ const SearchCoursePage: React.FC = () => {
         </Row>
       </Content>
 
-      {/* Review modal */}
       <Modal
         title="Write a Review"
         open={reviewModalVisible}
@@ -636,6 +851,30 @@ const SearchCoursePage: React.FC = () => {
             value={reviewComment}
             onChange={(e) => setReviewComment(e.target.value)}
             placeholder="Share your experience with this course..."
+          />
+        </div>
+      </Modal>
+
+      <Modal
+        title="Edit Review"
+        open={editReviewModalVisible}
+        onCancel={() => setEditReviewModalVisible(false)}
+        onOk={handleUpdateReview}
+        okText="Update Review"
+      >
+        <div style={{ marginBottom: '16px' }}>
+          <Text>Your Rating:</Text>
+          <div>
+            <Rate value={editReviewRating} onChange={setEditReviewRating} />
+          </div>
+        </div>
+        <div>
+          <Text>Your Review:</Text>
+          <Input.TextArea
+            rows={4}
+            value={editReviewComment}
+            onChange={(e) => setEditReviewComment(e.target.value)}
+            placeholder="Update your experience with this course..."
           />
         </div>
       </Modal>
