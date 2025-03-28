@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Menu, MenuProps, Dropdown, Avatar, Spin, Row, Col } from 'antd';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useSession } from '../../hooks/useSession'; // Custom hook for session management
+import { getUserFromSession } from '../../utils/sessionUtils';
 
 export interface NavConfig {
   navBarTheme: 'light' | 'dark';
@@ -19,6 +21,8 @@ interface User {
 const NavBar: React.FC<NavConfig> = (config) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { fetchSession, logout } = useSession(); // Using the custom session hook
+  // const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isLoggingOut, setIsLoggingOut] = useState<boolean>(false);
@@ -44,6 +48,7 @@ const NavBar: React.FC<NavConfig> = (config) => {
   const handleLogout = async () => {
     setIsLoggingOut(true);
     try {
+      await logout(); // Call the logout method from the hook
       sessionStorage.removeItem('user');
       navigate('/login');
     } catch (error) {
