@@ -151,6 +151,37 @@ const ProviderDashboard: React.FC = () => {
             },
         });
     };
+    //shawn added
+    const handleRemoveLearner = (courseId: number, enrollmentId: number) => {
+        Modal.confirm({
+            title: 'Are you sure you want to remove this learner?',
+            content: 'This action will unenroll the learner from the course.',
+            okText: 'Remove',
+            cancelText: 'Cancel',
+            onOk: async () => {
+                try {
+                    const response = await fetch(
+                        `http://localhost:5000/api/courses/${courseId}/enrollments/${enrollmentId}`, 
+                        {
+                            method: 'DELETE',
+                        }
+                    );
+                    const data = await response.json();
+                    if (response.ok) {
+                        message.success('Learner removed successfully');
+                        setEnrollments(prev => prev.filter(enrollment => 
+                            enrollment.enrollment_id !== enrollmentId
+                        ));
+                    } else {
+                        message.error(data.error || 'Failed to remove learner');
+                    }
+                } catch (error) {
+                    message.error('Failed to remove learner');
+                }
+            },
+        });
+    };
+    
 
     const columnsCourses = [
         {
@@ -217,6 +248,16 @@ const ProviderDashboard: React.FC = () => {
             title: 'Enrollment Date',
             dataIndex: 'enrolled_at',
             key: 'enrolled_at',
+        },
+        //shawn added
+        {
+            title: 'Actions',
+            key: 'actions',
+            render: (_: any, record: Enrollment) => (
+                <Button danger onClick={() => handleRemoveLearner(record.course_id, record.enrollment_id)}>
+                    Remove Learner
+                </Button>
+            ),
         },
     ];
 
