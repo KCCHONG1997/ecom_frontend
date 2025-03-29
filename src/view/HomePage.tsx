@@ -1,93 +1,121 @@
-import React, { useEffect } from 'react';
-import { Carousel, Typography, Row, Col, Button, Card } from 'antd';
+import React, { useEffect, useState } from 'react';
+import {
+  Typography, Row, Col, Button, Card, List, Input
+} from 'antd';
 import { useDispatch, useSelector } from 'react-redux';
 import { setVisibleCards } from '../redux/slices/carouselSlice';
 import type { RootState } from '../redux/store';
-import ItemCard from '../component/card/ItemCard';
+import ReactMarkdown from 'react-markdown';
 
 const { Title, Paragraph } = Typography;
 
-const HomePage: React.FC = () => {
+// Optional interface for chatbot messages
+interface ChatMessage {
+  sender: 'user' | 'bot';
+  text: string;
+  isThinking?: boolean;
+}
 
+const HomePage: React.FC = () => {
   const dispatch = useDispatch();
   const visibleCards = useSelector((state: RootState) => state.carousel.visibleCards);
 
-  // DUMMY DATA for product
-  const items = [
-    {
-      id: 1,
-      image: 'https://via.placeholder.com/300x200?text=Product+1',
-      title: 'Product 1',
-      description: 'This is a short description of Product 1.',
-      price: '$100',
-    },
-    {
-      id: 2,
-      image: 'https://via.placeholder.com/300x200?text=Product+2',
-      title: 'Product 2',
-      description: 'This is a short description of Product 2.',
-      price: '$150',
-    },
-    {
-      id: 3,
-      image: 'https://via.placeholder.com/300x200?text=Product+3',
-      title: 'Product 3',
-      description: 'This is a short description of Product 3.',
-      price: '$200',
-    },
-    {
-      id: 4,
-      image: 'https://via.placeholder.com/300x200?text=Product+4',
-      title: 'Product 5',
-      description: 'This is a short description of Product 3.',
-      price: '$200',
-    },
-    {
-      id: 5,
-      image: 'https://via.placeholder.com/300x200?text=Product+5',
-      title: 'Product 5',
-      description: 'This is a short description of Product 3.',
-      price: '$250',
-    },
-    {
-      id: 6,
-      image: 'https://via.placeholder.com/300x200?text=Product+6',
-      title: 'Product 6',
-      description: 'This is a short description of Product 3.',
-      price: '$396',
-    },
-  ];
-
+  // Responsive adjustments (if you still need them for other sections)
   useEffect(() => {
     const handleResize = () => {
       const width = window.innerWidth;
-
       if (width < 1000) dispatch(setVisibleCards(1));
       else if (width < 1300) dispatch(setVisibleCards(2));
       else dispatch(setVisibleCards(3));
     };
-
-    handleResize(); // Initial check
+    handleResize();
     window.addEventListener('resize', handleResize);
-
     return () => {
       window.removeEventListener('resize', handleResize);
     };
   }, [dispatch]);
 
-  const groupedItems = [];
-  for (let i = 0; i < items.length; i += visibleCards) {
-    groupedItems.push(items.slice(i, i + visibleCards));
-  }
+  //------------------------------------------------------------------
+  // Chatbot state & logic
+  //------------------------------------------------------------------
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [userInput, setUserInput] = useState('');
+
+  // Send user's message to the chatbot API and handle the response
+  const handleSend = async () => {
+    if (!userInput.trim()) return;
+
+    // Add the user's message
+    setMessages((prev) => [
+      ...prev,
+      { sender: 'user', text: userInput.trim() },
+    ]);
+
+    // Immediately add a "thinking" message from the bot
+    setMessages((prev) => [
+      ...prev,
+      { sender: 'bot', text: 'Let me think...', isThinking: true },
+    ]);
+
+    try {
+      const response = await fetch('http://localhost:8000/chatbot/get_response', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          msg: userInput,
+          choice: 2, // Adjust this based on your endpoint’s requirements
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('ChatBot API request failed');
+      }
+
+      const data = await response.json();
+      const botReply = data.response || 'Sorry, no response.';
+
+      // Replace the "thinking" message with the final response
+      setMessages((prev) => {
+        const newMessages = [...prev];
+        const thinkingIndex = newMessages.findIndex((m) => m.isThinking);
+        if (thinkingIndex !== -1) {
+          newMessages[thinkingIndex] = {
+            sender: 'bot',
+            text: botReply,
+            isThinking: false,
+          };
+        }
+        return newMessages;
+      });
+    } catch (error) {
+      console.error('ChatBot error:', error);
+      // If there's an error, replace the "thinking" message with an error message
+      setMessages((prev) => {
+        const newMessages = [...prev];
+        const thinkingIndex = newMessages.findIndex((m) => m.isThinking);
+        if (thinkingIndex !== -1) {
+          newMessages[thinkingIndex] = {
+            sender: 'bot',
+            text: 'Oops! Something went wrong. Please try again later.',
+            isThinking: false,
+          };
+        }
+        return newMessages;
+      });
+    }
+
+    // Clear the user's input
+    setUserInput('');
+  };
 
   return (
-    <div style={{ width: '100%', }}>
-      {/* Hero Section */}
+    <div style={{ width: '100%' }}>
+      {/* HERO SECTION */}
       <div
         style={{
           width: '100%',
           height: '500px',
-          backgroundColor: '#222222', // Primary color
+          backgroundColor: '#222222',
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
@@ -98,77 +126,59 @@ const HomePage: React.FC = () => {
         <div>
           <Title style={{ color: '#fff', fontSize: '3rem' }}>Welcome to Our Platform</Title>
           <Paragraph style={{ color: '#fff', fontSize: '1.2rem', marginBottom: '20px' }}>
-            Join us today and enjoy exclusive benefits.
+            Need Career Advice? Talk to our AI Chatbot!
           </Paragraph>
-          <Button type="primary" size="large" style={{ marginRight: '10px' }}>
-            Sign Up
-          </Button>
-          <Button size="large" style={{ background: '#fff', color: '#1890ff' }}>
-            Learn More
-          </Button>
         </div>
       </div>
 
-      {/* Other Content */}
-      <Row gutter={[16, 16]} style={{ marginTop: '20px', padding: '0 20px', height: '400px' }}>
-        <Col span={12}>
-          <Card style={{ padding: '20px', background: '#f0f2f5', borderRadius: '8px', boxShadow: '0px 4px 6px rgba(0, 0, 0, 0.1)', }}>
-            <Title level={3}>Why Join Us?</Title>
-            <Paragraph>
-              Explore a world of opportunities with exclusive features tailored for you.
-            </Paragraph>
-          </Card>
-        </Col>
-        <Col span={12}>
-          <Card style={{ padding: '20px', background: '#f0f2f5', borderRadius: '8px', boxShadow: '0px 4px 6px rgba(0, 0, 0, 0.1)', }}>
-            <Title level={3}>Get Started Today</Title>
-            <Paragraph>
-              It's quick, easy, and free to get started. Join us and see the difference.
-            </Paragraph>
-
-          </Card>
-        </Col>
-      </Row>
-
-      {/* Checkout Our Top Seller */}
-
-      <div style={{ backgroundColor: '#777777', color: '#fff', padding: '50px 20px' }}>
-        <Row gutter={[15, 15]} align="middle">
-          {/* Left Column */}
-          <Col xs={12} md={4}>
-            <Title style={{ color: '#fff', fontSize: '2rem', padding: '10px 25px' }}>
-              Check Out Our Top Seller
-            </Title>
-          </Col>
-
-          {/* Right Column */}
-          <Col xs={24} md={16} style={{ maxWidth: '80vw' }}>
-            <Carousel effect='fade' dotPosition='right'>
-              {groupedItems.map((group, index) => (
-                <div key={index}>
-                  <Row gutter={[15, 15]} justify="center">
-                    {group.map((item) => (
-                      <Col key={item.id} xs={24} sm={12} md={8} span={10}>
-                        <ItemCard
-                          image={item.image}
-                          title={item.title}
-                          description={item.description}
-                          price={item.price}
-                          size='medium'
-                        />
-                      </Col>
-                    ))}
-                  </Row>
+      <Row gutter={[16, 16]} style={{ marginBottom: '120px', padding: '0 20px', height: '400px' }}>
+        {/* CHATBOT SECTION (Wider) */}
+        <div
+          style={{
+            width: '100%',
+            maxWidth: '95%',
+            margin: '40px auto',
+            border: '1px solid #d9d9d9',
+            borderRadius: '8px',
+            padding: '16px',
+            background: '#fff',
+          }}
+        >
+          <List
+            dataSource={messages}
+            locale={{ emptyText: "Talk to me! I can give career advice" }}
+            renderItem={(item, idx) => (
+              <List.Item key={idx}>
+                <strong style={{ marginRight: '8px' }}>
+                  {item.sender === 'user' ? 'You:' : 'Bot:'}
+                </strong>
+                {/* Render Markdown for the message */}
+                <div style={{ overflowWrap: 'anywhere' }}>
+                  <ReactMarkdown>{item.text}</ReactMarkdown>
                 </div>
-              ))}
-            </Carousel>
-          </Col>
-        </Row>
-      </div>
+              </List.Item>
+            )}
+            style={{
+              marginBottom: '12px',
+              maxHeight: '300px',   // <--- Limit list height
+              overflowY: 'auto',    // <--- Scroll if too many messages
+            }}
+          />
+
+          <Input.TextArea
+            rows={2}
+            value={userInput}
+            onChange={(e) => setUserInput(e.target.value)}
+            placeholder="Ask for career advice..."
+            style={{ marginBottom: '8px' }}
+          />
+          <Button type="primary" onClick={handleSend}>
+            Send
+          </Button>
+        </div>
+      </Row>
     </div>
-
   );
-
 };
 
 export default HomePage;
