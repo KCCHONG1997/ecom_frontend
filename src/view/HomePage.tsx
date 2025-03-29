@@ -9,7 +9,6 @@ import ReactMarkdown from 'react-markdown';
 
 const { Title, Paragraph } = Typography;
 
-// Optional interface for chatbot messages
 interface ChatMessage {
   sender: 'user' | 'bot';
   text: string;
@@ -20,7 +19,6 @@ const HomePage: React.FC = () => {
   const dispatch = useDispatch();
   const visibleCards = useSelector((state: RootState) => state.carousel.visibleCards);
 
-  // Responsive adjustments (if you still need them for other sections)
   useEffect(() => {
     const handleResize = () => {
       const width = window.innerWidth;
@@ -35,23 +33,17 @@ const HomePage: React.FC = () => {
     };
   }, [dispatch]);
 
-  //------------------------------------------------------------------
-  // Chatbot state & logic
-  //------------------------------------------------------------------
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [userInput, setUserInput] = useState('');
 
-  // Send user's message to the chatbot API and handle the response
   const handleSend = async () => {
     if (!userInput.trim()) return;
 
-    // Add the user's message
     setMessages((prev) => [
       ...prev,
       { sender: 'user', text: userInput.trim() },
     ]);
 
-    // Immediately add a "thinking" message from the bot
     setMessages((prev) => [
       ...prev,
       { sender: 'bot', text: 'Let me think...', isThinking: true },
@@ -63,7 +55,7 @@ const HomePage: React.FC = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           msg: userInput,
-          choice: 2, // Adjust this based on your endpoint’s requirements
+          choice: 2,
         }),
       });
 
@@ -74,7 +66,6 @@ const HomePage: React.FC = () => {
       const data = await response.json();
       const botReply = data.response || 'Sorry, no response.';
 
-      // Replace the "thinking" message with the final response
       setMessages((prev) => {
         const newMessages = [...prev];
         const thinkingIndex = newMessages.findIndex((m) => m.isThinking);
@@ -89,7 +80,6 @@ const HomePage: React.FC = () => {
       });
     } catch (error) {
       console.error('ChatBot error:', error);
-      // If there's an error, replace the "thinking" message with an error message
       setMessages((prev) => {
         const newMessages = [...prev];
         const thinkingIndex = newMessages.findIndex((m) => m.isThinking);
@@ -103,14 +93,11 @@ const HomePage: React.FC = () => {
         return newMessages;
       });
     }
-
-    // Clear the user's input
     setUserInput('');
   };
 
   return (
     <div style={{ width: '100%' }}>
-      {/* HERO SECTION */}
       <div
         style={{
           width: '100%',
@@ -132,7 +119,6 @@ const HomePage: React.FC = () => {
       </div>
 
       <Row gutter={[16, 16]} style={{ marginBottom: '120px', padding: '0 20px', height: '400px' }}>
-        {/* CHATBOT SECTION (Wider) */}
         <div
           style={{
             width: '100%',
@@ -160,8 +146,8 @@ const HomePage: React.FC = () => {
             )}
             style={{
               marginBottom: '12px',
-              maxHeight: '300px',   // <--- Limit list height
-              overflowY: 'auto',    // <--- Scroll if too many messages
+              maxHeight: '300px',   
+              overflowY: 'auto',  
             }}
           />
 
