@@ -93,6 +93,15 @@ const NavBar: React.FC<NavConfig> = (config) => {
     },
   ];
 
+  //ys added
+  if (user && ((user as unknown) as { role: string }).role === 'admin') {
+    menuItems.splice(1, 0, {
+      key: 'adminManagement',
+      label: 'Admin Management',
+      onClick: () => navigate('/adminManagementPage'),
+    });
+  }
+
   return (
     <Spin spinning={isLoading || isLoggingOut} size="large">
       <Row justify="space-between" align="middle" style={{ width: '100%' }}>
