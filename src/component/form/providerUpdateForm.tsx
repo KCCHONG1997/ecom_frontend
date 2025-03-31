@@ -36,7 +36,11 @@ const ProviderUpdate: React.FC<ProviderUpdateProps> = ({ open, loading, initialV
       }}
       footer={null}
     >
-      <Form form={form} layout="vertical" onFinish={onFinish}>
+      <Form form={form} layout="vertical" onFinish={onFinish} onValuesChange={(changedValues, allValues) => {
+        if (changedValues.price !== undefined) {
+          form.setFieldsValue({ total_cost: changedValues.price });
+        }
+      }}>
         <Form.Item name="creator_id" label="Creator ID" hidden>
           <InputNumber />
         </Form.Item>
@@ -102,13 +106,14 @@ const ProviderUpdate: React.FC<ProviderUpdateProps> = ({ open, loading, initialV
         >
           <InputNumber min={1} style={{ width: '100%' }} />
         </Form.Item>
-        {/* <Form.Item
+        <Form.Item
           name="total_cost"
           label="Total Cost (SGD)"
-          rules={[{ required: true, message: 'Please input total cost!' }]}
+          // rules={[{ required: true, message: 'Please input total cost!' }]}
+          hidden
         >
           <InputNumber min={0} style={{ width: '100%' }} />
-        </Form.Item> */}
+        </Form.Item>
         <Form.Item
           name="tile_image_url"
           label="Course Image"
