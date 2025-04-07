@@ -37,52 +37,38 @@ const HomePage: React.FC = () => {
   const [userInput, setUserInput] = useState('');
 
   const handleSend = async () => {
-    if (!userInput.trim()) return;
-
-    setMessages((prev) => [
-      ...prev,
-      { sender: 'user', text: userInput.trim() },
-    ]);
-
-    setMessages((prev) => [
-      ...prev,
-      { sender: 'bot', text: 'Let me think...', isThinking: true },
-    ]);
-
+    const text = userInput.trim();
+    if (!text) return;
+  
+    setUserInput('');
+  
+    setMessages(prev => [...prev, { sender: 'user', text }]);
+    setMessages(prev => [...prev, { sender: 'bot', text: 'Let me think...', isThinking: true }]);
+  
     try {
       const response = await fetch('http://localhost:8000/chatbot/get_response', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          msg: userInput,
-          choice: 2,
-        }),
+        body: JSON.stringify({ msg: text, choice: 2 }),
       });
-
-      if (!response.ok) {
-        throw new Error('ChatBot API request failed');
-      }
-
+  
+      if (!response.ok) throw new Error('ChatBot API request failed');
       const data = await response.json();
       const botReply = data.response || 'Sorry, no response.';
-
-      setMessages((prev) => {
+  
+      setMessages(prev => {
         const newMessages = [...prev];
-        const thinkingIndex = newMessages.findIndex((m) => m.isThinking);
+        const thinkingIndex = newMessages.findIndex(m => m.isThinking);
         if (thinkingIndex !== -1) {
-          newMessages[thinkingIndex] = {
-            sender: 'bot',
-            text: botReply,
-            isThinking: false,
-          };
+          newMessages[thinkingIndex] = { sender: 'bot', text: botReply, isThinking: false };
         }
         return newMessages;
       });
-    } catch (error) {
-      console.error('ChatBot error:', error);
-      setMessages((prev) => {
+    } catch (err) {
+      console.error('ChatBot error:', err);
+      setMessages(prev => {
         const newMessages = [...prev];
-        const thinkingIndex = newMessages.findIndex((m) => m.isThinking);
+        const thinkingIndex = newMessages.findIndex(m => m.isThinking);
         if (thinkingIndex !== -1) {
           newMessages[thinkingIndex] = {
             sender: 'bot',
@@ -93,9 +79,8 @@ const HomePage: React.FC = () => {
         return newMessages;
       });
     }
-    setUserInput('');
   };
-
+  
   return (
     <div style={{ width: '100%' }}>
       <div
