@@ -464,10 +464,10 @@ const SearchCoursePage: React.FC = () => {
     };
 
     try {
-      const endpoint = selectedCourse.courseId 
-        ? `http://localhost:5000/api/courses/${selectedCourse.courseId}/reviews`
-        : `http://localhost:5000/api/courses/reviews`;
-        
+      const endpoint = selectedCourse.courseId
+        ? `http://localhost:${PORT}/api/courses/${selectedCourse.courseId}/reviews`
+        : `http://localhost:${PORT}/api/courses/reviews`;
+  
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -479,39 +479,29 @@ const SearchCoursePage: React.FC = () => {
         }),
         credentials: 'include'
       });
-      
-      if (!response.ok) {
-        throw new Error('Failed to submit review');
-      }
-      
+  
+      if (!response.ok) throw new Error('Failed to submit review');
+  
       const result = await response.json();
-      newReview.reviewId = result.reviewId;
-      
-      const updatedCourses = coursesData.map(course => {
-        if (course.externalReferenceNumber === selectedCourse.externalReferenceNumber) {
-          return {
-            ...course,
-            reviews: [...(course.reviews || []), newReview]
-          };
-        }
-        return course;
-      });
-
+      newReview.reviewId = result.review_id ?? result.reviewId;
+      const updatedCourses = coursesData.map(course =>
+        course.externalReferenceNumber === selectedCourse.externalReferenceNumber
+          ? { ...course, reviews: [...(course.reviews || []), newReview] }
+          : course
+      );
       setCoursesData(updatedCourses);
-      
-      const updatedCourse = updatedCourses.find(c => c.externalReferenceNumber === selectedCourse.externalReferenceNumber);
-      if (updatedCourse) {
-        setSelectedCourse(updatedCourse);
-      }
-      
+  
+      const updatedCourse = updatedCourses.find(
+        c => c.externalReferenceNumber === selectedCourse.externalReferenceNumber
+      );
+      if (updatedCourse) setSelectedCourse(updatedCourse);
+  
       setReviewModalVisible(false);
       setUserRating(0);
       setReviewComment('');
-      
       message.success('Review submitted successfully');
-      
-    } catch (error) {
-      console.error('Error submitting review:', error);
+    } catch (err) {
+      console.error('Error submitting review:', err);
       message.error('Failed to submit review. Please try again later.');
     }
   };
