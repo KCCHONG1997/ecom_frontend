@@ -4,7 +4,7 @@ const assert = require('assert');
 
 const baseUrl = `http://localhost:${process.env.PORT || 3000}/forgetpassword`;
 
-describe.only('Forget Password Page Tests', function () {
+describe('Forget Password Page Tests', function () {
   this.timeout(90000);
   let driver;
 

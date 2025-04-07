@@ -101,7 +101,7 @@ const ProviderCreateCoursePage: React.FC = () => {
           label="Price (SGD)"
           rules={[{ required: true, message: 'Please input course price!' }]}
         >
-          <InputNumber min={0} style={{ width: '100%' }} />
+          <InputNumber placeholder="Enter price" min={0} style={{ width: '100%' }} />
         </Form.Item>
 
         <Form.Item
@@ -109,7 +109,7 @@ const ProviderCreateCoursePage: React.FC = () => {
           label="Maximum Capacity"
           rules={[{ required: true, message: 'Please input maximum capacity!' }]}
         >
-          <InputNumber min={1} style={{ width: '100%' }} />
+          <InputNumber placeholder="Enter maximum capacity" min={1} style={{ width: '100%' }} />
         </Form.Item>
 
         <Form.Item
@@ -146,7 +146,7 @@ const ProviderCreateCoursePage: React.FC = () => {
           label="Total Training Hours"
           rules={[{ required: true, message: 'Please input training hours!' }]}
         >
-          <InputNumber min={1} style={{ width: '100%' }} />
+          <InputNumber placeholder="Enter total training hours" min={1} style={{ width: '100%' }} />
         </Form.Item>
 
         {/* Removed Total Cost; it will be set equal to price */}
