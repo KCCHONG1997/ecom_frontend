@@ -34,7 +34,7 @@ ModuleRegistry.registerModules([
 
 const myDarkTheme = themeQuartz.withPart(colorSchemeDark);
 const { Content } = Layout;
-const tableNames = ['UserAccount', 'Learners', 'Producer', 'Courses', 'Admin', 'Purchase History', 'Contact Us Feedback'];
+const tableNames = ['UserAccount', 'Learners', 'Producer', 'Courses', 'Admin', 'Contact Us Feedback'];
 
 const AdminManagementPage = () => {
   const navigate = useNavigate();
