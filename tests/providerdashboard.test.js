@@ -14,7 +14,7 @@ async function findAndClick(driver, locator, timeout = 10_000) {
   return el;
 }
 
-describe.only('Provider Dashboard Page Tests', function () {
+describe('Provider Dashboard Page Tests', function () {
   this.timeout(60_000);
   let driver;
 
