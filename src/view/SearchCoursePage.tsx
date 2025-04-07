@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Layout, Row, Col, Input, Card, Typography, List, Select, DatePicker, Spin, Button, Tag, Tabs, Empty, Rate, Modal, message } from 'antd';
+import { Layout, Row, Col, Input, Card, Typography, List, Select, Spin, Button, Tag, Tabs, Empty, Rate, Modal, message } from 'antd';
 import { ShoppingCartOutlined, StarOutlined, CheckCircleOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import moment from 'moment';
 import { showErrorMessage } from '../utils/messageUtils';
@@ -59,11 +59,10 @@ const SearchCoursePage: React.FC = () => {
   const [filterText, setFilterText] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | undefined>(undefined);
   const [selectedProvider, setSelectedProvider] = useState<string | undefined>(undefined);
-  const [selectedDate, setSelectedDate] = useState<moment.Moment | null>(null);
   const [selectedSource, setSelectedSource] = useState<string | undefined>(undefined);
 
-  const [inputKeyword, setInputKeyword] = useState<string>('business');
-  const [keyword, setKeyword] = useState<string>('business');
+  const [inputKeyword, setInputKeyword] = useState<string>('');
+  const [keyword, setKeyword] = useState<string>('');
 
   const [page, setPage] = useState<number>(1);
   const [hoverLoadMore, setHoverLoadMore] = useState<boolean>(false);
@@ -227,17 +226,15 @@ const SearchCoursePage: React.FC = () => {
         return course.source === selectedSource &&
           course.title.toLowerCase().includes(filterText.toLowerCase()) &&
           (selectedCategory ? course.category === selectedCategory : true) &&
-          (selectedProvider ? course.provider === selectedProvider : true) &&
-          (selectedDate ? course.date === selectedDate.format('YYYY-MM-DD') : true);
+          (selectedProvider ? course.provider === selectedProvider : true);
       } else {
         if (course.source === 'internal') return true;
         return course.title.toLowerCase().includes(filterText.toLowerCase()) &&
           (selectedCategory ? course.category === selectedCategory : true) &&
-          (selectedProvider ? course.provider === selectedProvider : true) &&
-          (selectedDate ? course.date === selectedDate.format('YYYY-MM-DD') : true);
+          (selectedProvider ? course.provider === selectedProvider : true);
       }
     });
-  }, [allCourses, filterText, selectedCategory, selectedProvider, selectedDate, selectedSource]);
+  }, [allCourses, filterText, selectedCategory, selectedProvider, selectedSource]);
 
   const handleLoadMore = () => {
     const nextPage = page + 1;
@@ -588,13 +585,6 @@ const SearchCoursePage: React.FC = () => {
                   </Option>
                 ))}
               </Select>
-              <DatePicker
-                style={{ width: '100%' }}
-                placeholder="Filter by Date"
-                value={selectedDate || undefined}
-                onChange={(date) => setSelectedDate(date)}
-                format="YYYY-MM-DD"
-              />
             </Card>
             {isLoading && page === 1 ? (
               <Spin style={{ display: 'block', marginTop: 20 }} />
