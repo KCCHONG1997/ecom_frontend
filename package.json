@@ -34,7 +34,7 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "mocha tests/*.js --reporter mochawesome --reporter-options reportDir=./reports,reportFilename=report,overwrite=true,html=false,json=true && node ./reports/generateCSVreport.js",
-    "wbtest": "jest",
+    "wbtest": "jest --testMatch '**/tests/whitebox/*'",
     "eject": "react-scripts eject"
   },
   "eslintConfig": {

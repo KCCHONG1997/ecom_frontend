@@ -1,9 +1,13 @@
 // jest.setup.js
-require('@testing-library/jest-dom/extend-expect');
+require("@testing-library/jest-dom/extend-expect");
 
-Object.defineProperty(window, 'matchMedia', {
+if (typeof TextEncoder === "undefined") {
+  global.TextEncoder = require("util").TextEncoder;
+}
+
+Object.defineProperty(window, "matchMedia", {
   writable: true,
-  value: jest.fn().mockImplementation(query => ({
+  value: jest.fn().mockImplementation((query) => ({
     matches: false,
     media: query,
     onchange: null,
