@@ -285,11 +285,6 @@ const AdminManagementPage = () => {
             Delete Selected Admin(s)
           </Button>
         )}
-        {(selectedTable === 'Learners' || selectedTable === 'Producer' || selectedTable === 'Courses') && (
-          <Button onClick={handleEditClick} type="primary" style={{ marginBottom: 16 }}>
-            Edit Selected Row
-          </Button>
-        )}
         <div style={{ overflowX: 'auto' }}>
           <div className="aggrid_div" style={{ height: 500, minWidth: '1500px' }}>
             <AgGridReact
