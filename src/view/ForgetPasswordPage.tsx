@@ -16,7 +16,7 @@ const ForgetPasswordPage: React.FC = () => {
     const onFinish: FormProps<FieldType>['onFinish'] = async (values) => {
         setIsLoading(true);
         try {
-            const response = await fetch(`http://localhost:${PORT}/api/forgotpassword`, {
+            const response = await fetch(`http://localhost:${PORT}/api/forgot-password`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email: values.email }),
